@@ -1,0 +1,16 @@
+services:
+  uf_sim:
+    image: danielwang123321/uf-ubuntu-docker
+    container_name: uf_software
+    tty: true
+    stdin_open: true
+    command: ["bash", "-lc", "tail -f /dev/null"]
+    ports:
+      - "18333:18333"
+      - "502:502"
+      - "503:503"
+      - "504:504"
+      - "30000:30000"
+      - "30001:30001"
+      - "30002:30002"
+      - "30003:30003"
