@@ -167,7 +167,8 @@ scripts/control/play_position.sh data/trajectories/your_recorded.csv
 - `scripts/sim/`: Simulator lifecycle helpers.
 - `scripts/control/`: Entry-point scripts for playback.
 - `src/xarm_pipeline/`: Python trajectory I/O and playback logic.
-- `docs/trajectory_format.md`: Required CSV format.
+- `docs/trajectory_format.md`: Trajectory CSV export contract (columns, units, frames, timing).
+- `src/xarm_pipeline/validate_trajectory.py`: Format pre-flight check (`python -m src.xarm_pipeline.validate_trajectory <csv>`).
 
 ## Firmware IK note
 
@@ -178,3 +179,21 @@ For Cartesian trajectories, this project intentionally sends Cartesian commands 
 - Simulator IP from host is `127.0.0.1`.
 - For external IDE execution, keep `check_joint_limit=False`.
 - If Studio shows SN warning, close it and continue.
+
+## Safety walls
+
+Playback (`playback.py`, `cartesian_playback.py`) keeps the whole arm (links + tool) inside a configurable workcell box. Three layers do this:
+
+- pre-run trajectory check (reject or clip),
+- runtime guard (per-command check + a 250 Hz monitor that stops the arm),
+- the firmware TCP fence.
+
+All three are on by default. Edit `config/safety.yaml` (box size, base pose, margins, tool, radii). The defaults are sim placeholders, so measure your cell.
+
+```bash
+python -m src.xarm_pipeline.safety.validate --trajectory data/trajectories/x.csv [--policy clip]
+scripts/control/run_safety_demos.sh      # sim demo videos + plots -> outputs/safety_demo/
+.venv/bin/python -m pytest tests -q
+```
+
+`--disable-safety-preprocess`, `--disable-runtime-guard` and `--disable-firmware-fence` exist for demos only, and each one prints a warning. See [docs/safety_walls.md](docs/safety_walls.md) for frames, guarantees and limits.

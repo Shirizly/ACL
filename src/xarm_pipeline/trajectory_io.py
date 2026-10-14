@@ -5,6 +5,67 @@ from pathlib import Path
 
 import pandas as pd
 
+# Optional column that groups several trajectories into one file (see docs/trajectory_format.md).
+TRAJ_COLUMN = "traj"
+
+
+def split_trajectory_ref(ref: str | Path) -> tuple[Path, str | None]:
+    """'bank.csv#pick_left' -> (Path('bank.csv'), 'pick_left'); a plain path -> (path, None).
+
+    A path that exists as-is is never split, so file names containing '#' still work.
+    """
+    text = str(ref)
+    if Path(text).exists() or "#" not in text:
+        return Path(text), None
+    path, _, selector = text.rpartition("#")
+    return Path(path), selector
+
+
+def list_trajectories(df: pd.DataFrame) -> list[tuple[str, int]]:
+    """(name, row count) per trajectory, in order of first appearance."""
+    if TRAJ_COLUMN not in df.columns:
+        return []
+    counts = df[TRAJ_COLUMN].value_counts(sort=False)
+    return [(str(name), int(counts[name])) for name in pd.unique(df[TRAJ_COLUMN])]
+
+
+def select_trajectory(df: pd.DataFrame, selector: str | None, source: str = "") -> pd.DataFrame:
+    """Rows of one trajectory from a (possibly) multi-trajectory frame.
+
+    selector: a name from the 'traj' column (exact match wins), else a 0-based index in
+    order of first appearance. A file without the 'traj' column is a single trajectory.
+    Columns that are blank for every row of the selected trajectory are dropped.
+    """
+    if TRAJ_COLUMN not in df.columns:
+        if selector is not None:
+            raise ValueError(f"{source}: selector '#{selector}' given but the file has no '{TRAJ_COLUMN}' column")
+        return df
+    names = [n for n, _ in list_trajectories(df)]
+    listing = ", ".join(f"[{i}] {n}" for i, n in enumerate(names))
+    if df[TRAJ_COLUMN].isna().any():
+        raise ValueError(f"{source}: empty '{TRAJ_COLUMN}' cell at row {int(df[TRAJ_COLUMN].isna().to_numpy().argmax())}")
+    if selector is None:
+        if len(names) == 1:
+            selector = names[0]
+        else:
+            raise ValueError(f"{source} holds {len(names)} trajectories; pick one with '<file>#<name or index>': {listing}")
+    if selector in names:
+        name = selector
+    elif selector.lstrip("-").isdigit() and 0 <= int(selector) < len(names):
+        name = names[int(selector)]
+    else:
+        raise ValueError(f"{source}: no trajectory '{selector}'. Available: {listing}")
+    part = df[df[TRAJ_COLUMN] == name].drop(columns=[TRAJ_COLUMN]).reset_index(drop=True)
+    # Columns used only by other trajectories in the file are blank here: treat them as absent.
+    return part.dropna(axis=1, how="all")
+
+
+def read_trajectory_frame(ref: str | Path) -> pd.DataFrame:
+    """Read 'file.csv' or 'file.csv#selector' and return the selected trajectory's rows."""
+    path, selector = split_trajectory_ref(ref)
+    df = pd.read_csv(path, dtype={TRAJ_COLUMN: str})
+    return select_trajectory(df, selector, source=str(path))
+
 
 @dataclass
 class JointTrajectory:
@@ -22,7 +83,7 @@ class CartesianTrajectory:
 
 
 def load_joint_trajectory_csv(path: str | Path) -> JointTrajectory:
-    df = pd.read_csv(path)
+    df = read_trajectory_frame(path)
     required = ["t"] + [f"q{i}" for i in range(1, 8)]
     missing = [c for c in required if c not in df.columns]
     if missing:
@@ -39,7 +100,7 @@ def load_joint_trajectory_csv(path: str | Path) -> JointTrajectory:
 
 
 def load_cartesian_trajectory_csv(path: str | Path) -> CartesianTrajectory:
-    df = pd.read_csv(path)
+    df = read_trajectory_frame(path)
     required = ["t", "x", "y", "z"]
     missing = [c for c in required if c not in df.columns]
     if missing:
@@ -78,3 +139,23 @@ def load_cartesian_trajectory_csv(path: str | Path) -> CartesianTrajectory:
         twist=twist,
         orientation_source=orientation_source,
     )
+
+
+def main() -> None:
+    import argparse
+
+    p = argparse.ArgumentParser(description="List the trajectories in a trajectory CSV")
+    p.add_argument("csv")
+    args = p.parse_args()
+    path, _ = split_trajectory_ref(args.csv)
+    df = pd.read_csv(path, dtype={TRAJ_COLUMN: str})
+    entries = list_trajectories(df)
+    if not entries:
+        print(f"{path}: single trajectory, {len(df)} rows (no '{TRAJ_COLUMN}' column)")
+    for i, (name, rows) in enumerate(entries):
+        part = df[df[TRAJ_COLUMN] == name]
+        print(f"[{i}] {name}: {rows} rows, t = {part['t'].iloc[0]:.3f}..{part['t'].iloc[-1]:.3f} s   -> {path}#{name}")
+
+
+if __name__ == "__main__":
+    main()

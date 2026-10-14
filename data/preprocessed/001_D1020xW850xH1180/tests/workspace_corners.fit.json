@@ -1,0 +1,435 @@
+{
+  "generated_by": "safety.test_trajectories",
+  "fit_version": 3,
+  "grouped": true,
+  "trajectories": [
+    {
+      "name": "corner_xmin_ymin_zmin",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "corner_xmin_ymin_zmin",
+          "start_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corner_xmin_ymin_zmax",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "corner_xmin_ymin_zmax",
+          "start_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corner_xmin_ymax_zmin",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "corner_xmin_ymax_zmin",
+          "start_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corner_xmin_ymax_zmax",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "corner_xmin_ymax_zmax",
+          "start_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corner_xmax_ymin_zmin",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "corner_xmax_ymin_zmin",
+          "start_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corner_xmax_ymin_zmax",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "corner_xmax_ymin_zmax",
+          "start_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corner_xmax_ymax_zmin",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "corner_xmax_ymax_zmin",
+          "start_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corner_xmax_ymax_zmax",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "corner_xmax_ymax_zmax",
+          "start_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    }
+  ],
+  "report": [
+    {
+      "name": "corner_xmin_ymin_zmin",
+      "corner_mm": [
+        -490.0,
+        -390.0,
+        20.0
+      ],
+      "reached_mm": [
+        -401.7,
+        -267.5,
+        233.9
+      ],
+      "distance_to_corner_mm": 261.8,
+      "per_axis_gap_mm": [
+        88.3,
+        122.5,
+        213.9
+      ],
+      "via": [
+        [
+          60.0,
+          -260.0,
+          300.0
+        ]
+      ],
+      "duration_s": 36.9,
+      "safety_check": "SAFETY OK: min clearance 27.5 mm (required 22.5-32.5 mm), 1237 configs checked",
+      "seconds": 7.4
+    },
+    {
+      "name": "corner_xmin_ymin_zmax",
+      "corner_mm": [
+        -490.0,
+        -390.0,
+        1200.0
+      ],
+      "reached_mm": [
+        -374.2,
+        -267.5,
+        671.9
+      ],
+      "distance_to_corner_mm": 554.3,
+      "per_axis_gap_mm": [
+        115.8,
+        122.5,
+        528.1
+      ],
+      "via": [
+        [
+          60.0,
+          -260.0,
+          300.0
+        ]
+      ],
+      "duration_s": 41.2,
+      "safety_check": "SAFETY OK: min clearance 27.5 mm (required 22.5-32.5 mm), 1377 configs checked",
+      "seconds": 8.4
+    },
+    {
+      "name": "corner_xmin_ymax_zmin",
+      "corner_mm": [
+        -490.0,
+        460.0,
+        20.0
+      ],
+      "reached_mm": [
+        -401.2,
+        337.5,
+        235.0
+      ],
+      "distance_to_corner_mm": 262.9,
+      "per_axis_gap_mm": [
+        88.8,
+        122.5,
+        215.0
+      ],
+      "via": [
+        [
+          60.0,
+          320.0,
+          300.0
+        ]
+      ],
+      "duration_s": 38.8,
+      "safety_check": "SAFETY OK: min clearance 27.5 mm (required 22.5-32.5 mm), 1295 configs checked",
+      "seconds": 7.7
+    },
+    {
+      "name": "corner_xmin_ymax_zmax",
+      "corner_mm": [
+        -490.0,
+        460.0,
+        1200.0
+      ],
+      "reached_mm": [
+        -346.2,
+        337.5,
+        652.5
+      ],
+      "distance_to_corner_mm": 579.2,
+      "per_axis_gap_mm": [
+        143.8,
+        122.5,
+        547.5
+      ],
+      "via": [
+        [
+          60.0,
+          320.0,
+          300.0
+        ]
+      ],
+      "duration_s": 41.7,
+      "safety_check": "SAFETY OK: min clearance 27.5 mm (required 22.5-32.5 mm), 1391 configs checked",
+      "seconds": 8.9
+    },
+    {
+      "name": "corner_xmax_ymin_zmin",
+      "corner_mm": [
+        530.0,
+        -390.0,
+        20.0
+      ],
+      "reached_mm": [
+        442.3,
+        -265.3,
+        233.4
+      ],
+      "distance_to_corner_mm": 262.2,
+      "per_axis_gap_mm": [
+        87.7,
+        124.7,
+        213.4
+      ],
+      "via": [],
+      "duration_s": 14.9,
+      "safety_check": "SAFETY OK: min clearance 27.5 mm (required 22.5-32.5 mm), 499 configs checked",
+      "seconds": 2.7
+    },
+    {
+      "name": "corner_xmax_ymin_zmax",
+      "corner_mm": [
+        530.0,
+        -390.0,
+        1200.0
+      ],
+      "reached_mm": [
+        401.7,
+        -172.4,
+        697.8
+      ],
+      "distance_to_corner_mm": 562.1,
+      "per_axis_gap_mm": [
+        128.3,
+        217.6,
+        502.2
+      ],
+      "via": [],
+      "duration_s": 20.4,
+      "safety_check": "SAFETY OK: min clearance 78.3 mm (required 22.5-32.5 mm), 683 configs checked",
+      "seconds": 3.1
+    },
+    {
+      "name": "corner_xmax_ymax_zmin",
+      "corner_mm": [
+        530.0,
+        460.0,
+        20.0
+      ],
+      "reached_mm": [
+        442.3,
+        337.0,
+        233.4
+      ],
+      "distance_to_corner_mm": 261.4,
+      "per_axis_gap_mm": [
+        87.7,
+        123.0,
+        213.4
+      ],
+      "via": [],
+      "duration_s": 17.4,
+      "safety_check": "SAFETY OK: min clearance 27.5 mm (required 22.5-32.5 mm), 585 configs checked",
+      "seconds": 2.8
+    },
+    {
+      "name": "corner_xmax_ymax_zmax",
+      "corner_mm": [
+        530.0,
+        460.0,
+        1200.0
+      ],
+      "reached_mm": [
+        399.8,
+        199.6,
+        690.6
+      ],
+      "distance_to_corner_mm": 586.7,
+      "per_axis_gap_mm": [
+        130.2,
+        260.4,
+        509.4
+      ],
+      "via": [],
+      "duration_s": 20.6,
+      "safety_check": "SAFETY OK: min clearance 80.2 mm (required 22.5-32.5 mm), 689 configs checked",
+      "seconds": 3.1
+    }
+  ],
+  "speed_mm_s": 50.0,
+  "config": "/home/alon/Code/ACL/config/safety.yaml"
+}

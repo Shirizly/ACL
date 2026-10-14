@@ -1,0 +1,181 @@
+# Safety virtual walls for the xArm 7 workcell.
+# See docs/safety_walls.md for the frame conventions and what each layer does.
+#
+# UNITS: all lengths in MILLIMETERS (same as the xArm SDK), angles in DEGREES,
+#        times in SECONDS.
+#
+# >>> Values marked  [MEASURE]  are placeholders chosen to be *slightly*
+# >>> constraining in simulation so the walls are actually hit by tests.
+# >>> Replace them with values measured on the real cell before using the
+# >>> real robot.
+
+# ---------------------------------------------------------------------------
+# Workcell box ("world" / floor frame)
+#   origin = center of the box FLOOR, z up.
+#   x in [-D/2, +D/2]   (D = depth, along world x)
+#   y in [-W/2, +W/2]   (W = width, along world y)
+#   z in [0, H]         (H = height; z=0 is the floor)
+# ---------------------------------------------------------------------------
+# Two ways to give the workcell (use one):
+#  (a) walls measured from the robot base (easiest: touch each wall with the gripper and record it with
+#      scripts/control/measure.sh walls, which prints this block). Walls must be parallel to the base axes.
+#      Replace BOTH the 'workcell:' block below and the 'robot_base_in_world:' block with:
+workcell:
+    walls_in_base_mm: {x_min: -490, x_max: 530, y_min: -390, y_max: 460, z_min: 20, z_max: 1200}
+#  (b) the box form below: box size + where the robot base sits in it.
+# workcell:
+#   depth_D_mm: 1150.0     # [MEASURE] extent along world x -> walls at x = +-575
+#   width_W_mm: 800.0      # [MEASURE] extent along world y -> walls at y = +-400 (inside the ~700 mm reach)
+#   height_H_mm: 1200.0    # [MEASURE] floor (z=0) to ceiling
+
+# Pose of the ROBOT BASE frame (the frame get_position() reports in)
+# expressed in the world/floor frame. yaw = rotation about world z.
+# robot_base_in_world:
+#   x_mm: -75.0              # [MEASURE]
+#   y_mm: 0.0              # [MEASURE]
+#   z_mm: -20.0              # [MEASURE] height of the base mounting surface above the box floor.
+#                            # May be negative: the base column may protrude through the floor (it is never
+#                            # checked against it); all moving links still are. Limit: the shoulder housing
+#                            # must clear the floor, i.e. z_mm >= -(267 - radii_mm.upper_arm - safety_margin_mm).
+#   yaw_deg: 0.0           # [MEASURE] base x-axis direction measured from world x, CCW positive
+
+# Distance every piece of arm/tool geometry must keep from every wall.
+safety_margin_mm: 20.0
+
+# ---------------------------------------------------------------------------
+# Collision geometry: the arm is modelled as capsules (line segment + radius)
+# between kinematic chain points computed with the xArm 7 FK.
+# ---------------------------------------------------------------------------
+geometry:
+  # Tool (gripper) tip relative to the FLANGE frame, mm. The 'tool' capsule
+  # goes from the flange to this point. [MEASURE] for your gripper.
+  # (xArm Gripper default TCP is z = 172 mm.)
+  tool_offset_mm: [0.0, 0.0, 172.0]
+  # Capsule radii, mm. Conservative guesses from the xArm 7 outline. [MEASURE]
+  radii_mm:
+    base: 80.0          # static column floor -> shoulder (only checked against side walls)
+    upper_arm: 65.0     # shoulder -> elbow
+    elbow: 65.0         # elbow joint housing
+    elbow_offset: 60.0  # elbow -> forearm start
+    forearm: 55.0       # forearm -> wrist
+    wrist: 50.0         # wrist housing
+    wrist_offset: 50.0  # wrist -> flange
+    tool: 0.0           # flange -> tool tip. 0: the gripper's shape is given by tool_box below (the old
+                        # round model, 50, missed the gripper's corners by up to 15 mm)
+  # DH parameters: 'nominal' uses the built-in xArm 7 values (identical to the
+  # sim firmware). On the real robot, run
+  #   python -m src.xarm_pipeline.safety.validate --check-robot-dh --ip <ip>
+  # to compare with the robot's calibrated values.
+  dh: nominal
+  # The firmware TCP offset (set in Studio / set_tcp_offset): the point whose
+  # pose get_position() reports and Cartesian trajectories command.
+  # [x,y,z mm, roll,pitch,yaw deg]. Used for OFFLINE checks of Cartesian CSVs;
+  # when connected to a robot the robot's actual value is read and used
+  # (a warning is printed if it differs).
+  firmware_tcp_offset: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  # Extra rigid box on the gripper (e.g. an attachment), checked against the walls like the links
+  # (exactly: its nearest corner), on top of the round 'tool' capsule. Ranges are [min, max] mm along the
+  # axes of 'frame':
+  #   flange: the J7 flange face (z out of the flange, toward the gripper; same axes as the firmware
+  #           TCP frame with zero TCP offset: what Studio shows as the tool frame)
+  #   tool:   the flange axes moved to tool_offset_mm (the gripper tip)
+  # Remove the block (or set tool_box: null) for no box. inflate_mm rounds it out by that radius.
+  # Standard xArm Gripper (AG1002): exact bounding box of UFACTORY's own mesh (Studio's
+  # static/stl/xarm_gripper.stl), whose frame was verified in the sim to be the flange frame (0.2 mm).
+  # y is the jaw (finger opening) direction. Check the real gripper with the fingers fully open.
+  tool_box:
+    frame: flange
+    x_mm: [-37.5, 37.5]
+    # y_mm: [-53.12, 53.12]
+    y_mm: [-85.0, 85.0]  # [MEASURE] the gripper's jaw opening range 
+    z_mm: [0.0, 175.86]
+    inflate_mm: 10.0
+  # The gripper extension (attachment), measured 2026-10-14, for when it is mounted again: replace the
+  # block above with this one, and set radii_mm.tool back to 50 (this box covers only the attachment).
+  # tool_box:
+  #   frame: flange
+  #   x_mm: [-17.5, 17.5]      # 35 mm wide, centered
+  #   y_mm: [-90.0, 90.0]      # 180 mm deep, centered
+  #   z_mm: [0.0, 85.0]        # 85 mm tall, from the frame origin outward
+  #   inflate_mm: 0.0
+
+# ---------------------------------------------------------------------------
+# Layer 1: preprocessing (offline check before anything moves)
+# ---------------------------------------------------------------------------
+preprocess:
+  enabled: true
+  policy: reject             # reject | clip   (clip only applies to Cartesian TCP-only violations)
+  interp_resolution_mm: 5.0  # max motion of ANY arm point between checked samples
+  interp_resolution_deg: 1.0 # max orientation step between Cartesian samples (IK continuation)
+  # Extra clearance required for Cartesian trajectories because the joint
+  # configuration is predicted with a local IK that matches the firmware's
+  # redundancy resolution only approximately (measured <5 mm in sim).
+  ik_model_tolerance_mm: 10.0
+  # clip only: the clip offsets are smoothed over about this time (never made
+  # smaller), so the clipped path decelerates before the boundary instead of
+  # stopping instantly at it (which the arm cannot do and the monitor would flag).
+  clip_smoothing_s: 0.3
+
+# ---------------------------------------------------------------------------
+# Layer 2: runtime guard (per-command check + monitor thread)
+# ---------------------------------------------------------------------------
+runtime:
+  enabled: true
+  command_check: true        # check every commanded target before sending it
+  monitor_rate_hz: 250.0     # joint-state polling rate of the monitor (own TCP connection)
+  stop_margin_mm: 5.0        # stop when predicted clearance to a wall < this
+  # Lookahead = approach speed toward the wall * (latency_s + stopping_time_s).
+  latency_s: 0.02            # sensing + compute + command latency  [MEASURE on real robot]
+  stopping_time_s: 0.08      # time from stop command to standstill [MEASURE on real robot]
+  velocity_window_s: 0.02    # window for finite-difference speed estimate
+
+# ---------------------------------------------------------------------------
+# Layer 3: firmware safety boundary (xArm "fence", TCP point only, base frame)
+# ---------------------------------------------------------------------------
+firmware_fence:
+  enabled: true
+  # The fence box is the largest base-frame axis-aligned box inscribed in the
+  # (possibly yawed) workcell box, shrunk by this many mm. 'auto' =
+  # safety_margin_mm + radii_mm.tool (the firmware TCP point must keep at least
+  # that clearance in any valid motion, so the fence never fires before the
+  # software layers on a valid trajectory).
+  shrink_mm: auto
+  restore_on_exit: true      # restore the previous fence settings after playback
+
+# ---------------------------------------------------------------------------
+# Sim video only (record_web_sim --walls / --arm-only). NOT used by any safety
+# check: objects listed here are drawn, not avoided.
+# ---------------------------------------------------------------------------
+visualization:
+  show_margin: true          # faint inner box at safety_margin_mm
+  show_tool: true            # draw the modelled gripper (translucent prism) and geometry.tool_box on the arm
+  wall_color: "#ff4d4d"
+  wall_opacity: 0.08
+  # Extra environment boxes, world/floor frame (same frame as the workcell), mm.
+  objects: []
+  # objects:
+  #   - name: table
+  #     center_mm: [0, 0, -20]     # box center
+  #     size_mm: [600, 500, 40]    # along world x, y, z
+  #     yaw_deg: 0
+  #     color: "#8b6b4a"
+  #     opacity: 0.8
+
+# ---------------------------------------------------------------------------
+# Trajectory fitting (python -m src.xarm_pipeline.safety.fit / scripts/control/fit_trajectories.sh)
+# Re-places Cartesian trajectories by a rigid motion so they fit the workcell,
+# splitting them if needed, and writes clean copies to a parallel *_clean dir.
+# ---------------------------------------------------------------------------
+fit:
+  yaw_range_deg: 180          # rigid rotation of the whole trajectory about vertical (relative motion kept exactly)
+  spin_range_deg: 0           # rotate the tool about its own approach axis, orientations only (e.g. symmetric gripper)
+  tilt_range_deg: 0           # rigid tilt of the whole trajectory (changes motion relative to gravity)
+  preferred_center_base_mm: [300.0, 0.0, 250.0]   # comfortable spot in front of the arm (base frame)
+  good_enough_slack_mm: 30.0  # clearance beyond the required one, then prefer least change / preferred spot
+  center_weight: 0.05         # slack-mm traded per mm away from the preferred center
+  angle_weight: 0.2           # slack-mm traded per degree of yaw/spin/tilt
+  max_evals: 150              # full-arm evaluations per (part of a) trajectory (~0.2-0.4 s each)
+  split: true                 # cut trajectories that cannot fit, near the middle, recursively
+  min_part_s: 1.0             # never make parts shorter than this; parts that still fail are dropped
+  max_depth: 3                # at most 2^3 = 8 parts
+  default_orientation_rpy_deg: [180.0, 0.0, 0.0]  # used when a trajectory has no orientation columns

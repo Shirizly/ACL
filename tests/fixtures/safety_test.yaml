@@ -1,0 +1,125 @@
+# Safety virtual walls for the xArm 7 workcell.
+# See docs/safety_walls.md for the frame conventions and what each layer does.
+#
+# UNITS: all lengths in MILLIMETERS (same as the xArm SDK), angles in DEGREES,
+#        times in SECONDS.
+#
+# >>> Values marked  [MEASURE]  are placeholders chosen to be *slightly*
+# >>> constraining in simulation so the walls are actually hit by tests.
+# >>> Replace them with values measured on the real cell before using the
+# >>> real robot.
+
+# ---------------------------------------------------------------------------
+# Workcell box ("world" / floor frame)
+#   origin = center of the box FLOOR, z up.
+#   x in [-D/2, +D/2]   (D = depth, along world x)
+#   y in [-W/2, +W/2]   (W = width, along world y)
+#   z in [0, H]         (H = height; z=0 is the floor)
+# ---------------------------------------------------------------------------
+workcell:
+  depth_D_mm: 1200.0     # [MEASURE] extent along world x -> walls at x = +-600
+  width_W_mm: 800.0      # [MEASURE] extent along world y -> walls at y = +-400 (inside the ~700 mm reach)
+  height_H_mm: 1100.0    # [MEASURE] floor (z=0) to ceiling
+
+# Pose of the ROBOT BASE frame (the frame get_position() reports in)
+# expressed in the world/floor frame. yaw = rotation about world z.
+robot_base_in_world:
+  x_mm: 0.0              # [MEASURE]
+  y_mm: 0.0              # [MEASURE]
+  z_mm: 0.0              # [MEASURE] height of the base mounting surface above the box floor
+  yaw_deg: 0.0           # [MEASURE] base x-axis direction measured from world x, CCW positive
+
+# Distance every piece of arm/tool geometry must keep from every wall.
+safety_margin_mm: 20.0
+
+# ---------------------------------------------------------------------------
+# Collision geometry: the arm is modelled as capsules (line segment + radius)
+# between kinematic chain points computed with the xArm 7 FK.
+# ---------------------------------------------------------------------------
+geometry:
+  # Tool (gripper) tip relative to the FLANGE frame, mm. The 'tool' capsule
+  # goes from the flange to this point. [MEASURE] for your gripper.
+  # (xArm Gripper default TCP is z = 172 mm.)
+  tool_offset_mm: [0.0, 0.0, 172.0]
+  # Capsule radii, mm. Conservative guesses from the xArm 7 outline. [MEASURE]
+  radii_mm:
+    base: 80.0          # static column floor -> shoulder (only checked against side walls)
+    upper_arm: 65.0     # shoulder -> elbow
+    elbow: 65.0         # elbow joint housing
+    elbow_offset: 60.0  # elbow -> forearm start
+    forearm: 55.0       # forearm -> wrist
+    wrist: 50.0         # wrist housing
+    wrist_offset: 50.0  # wrist -> flange
+    tool: 50.0          # flange -> tool tip (gripper body)  [MEASURE]
+  # DH parameters: 'nominal' uses the built-in xArm 7 values (identical to the
+  # sim firmware). On the real robot, run
+  #   python -m src.xarm_pipeline.safety.validate --check-robot-dh --ip <ip>
+  # to compare with the robot's calibrated values.
+  dh: nominal
+  # The firmware TCP offset (set in Studio / set_tcp_offset): the point whose
+  # pose get_position() reports and Cartesian trajectories command.
+  # [x,y,z mm, roll,pitch,yaw deg]. Used for OFFLINE checks of Cartesian CSVs;
+  # when connected to a robot the robot's actual value is read and used
+  # (a warning is printed if it differs).
+  firmware_tcp_offset: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+# ---------------------------------------------------------------------------
+# Layer 1: preprocessing (offline check before anything moves)
+# ---------------------------------------------------------------------------
+preprocess:
+  enabled: true
+  policy: reject             # reject | clip   (clip only applies to Cartesian TCP-only violations)
+  interp_resolution_mm: 5.0  # max motion of ANY arm point between checked samples
+  interp_resolution_deg: 1.0 # max orientation step between Cartesian samples (IK continuation)
+  # Extra clearance required for Cartesian trajectories because the joint
+  # configuration is predicted with a local IK that matches the firmware's
+  # redundancy resolution only approximately (measured <5 mm in sim).
+  ik_model_tolerance_mm: 10.0
+  # clip only: the clip offsets are smoothed over about this time (never made
+  # smaller), so the clipped path decelerates before the boundary instead of
+  # stopping instantly at it (which the arm cannot do and the monitor would flag).
+  clip_smoothing_s: 0.3
+
+# ---------------------------------------------------------------------------
+# Layer 2: runtime guard (per-command check + monitor thread)
+# ---------------------------------------------------------------------------
+runtime:
+  enabled: true
+  command_check: true        # check every commanded target before sending it
+  monitor_rate_hz: 250.0     # joint-state polling rate of the monitor (own TCP connection)
+  stop_margin_mm: 5.0        # stop when predicted clearance to a wall < this
+  # Lookahead = approach speed toward the wall * (latency_s + stopping_time_s).
+  latency_s: 0.02            # sensing + compute + command latency  [MEASURE on real robot]
+  stopping_time_s: 0.08      # time from stop command to standstill [MEASURE on real robot]
+  velocity_window_s: 0.02    # window for finite-difference speed estimate
+
+# ---------------------------------------------------------------------------
+# Layer 3: firmware safety boundary (xArm "fence", TCP point only, base frame)
+# ---------------------------------------------------------------------------
+firmware_fence:
+  enabled: true
+  # The fence box is the largest base-frame axis-aligned box inscribed in the
+  # (possibly yawed) workcell box, shrunk by this many mm. 'auto' =
+  # safety_margin_mm + radii_mm.tool (the firmware TCP point must keep at least
+  # that clearance in any valid motion, so the fence never fires before the
+  # software layers on a valid trajectory).
+  shrink_mm: auto
+  restore_on_exit: true      # restore the previous fence settings after playback
+
+# ---------------------------------------------------------------------------
+# Sim video only (record_web_sim --walls / --arm-only). NOT used by any safety
+# check: objects listed here are drawn, not avoided.
+# ---------------------------------------------------------------------------
+visualization:
+  show_margin: true          # faint inner box at safety_margin_mm
+  wall_color: "#ff4d4d"
+  wall_opacity: 0.08
+  # Extra environment boxes, world/floor frame (same frame as the workcell), mm.
+  objects: []
+  # objects:
+  #   - name: table
+  #     center_mm: [0, 0, -20]     # box center
+  #     size_mm: [600, 500, 40]    # along world x, y, z
+  #     yaw_deg: 0
+  #     color: "#8b6b4a"
+  #     opacity: 0.8

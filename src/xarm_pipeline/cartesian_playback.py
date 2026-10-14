@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 import threading
 import time
 from pathlib import Path
@@ -12,6 +13,14 @@ import pandas as pd
 from xarm.wrapper import XArmAPI
 
 from .analyze_cartesian_error import analyze_cartesian_error
+from .safety.session import (
+    EXIT_REJECTED,
+    EXIT_SAFETY_STOP,
+    SafetyRejected,
+    SafetySession,
+    SafetyStop,
+    add_safety_args,
+)
 from .trajectory_io import load_cartesian_trajectory_csv
 
 
@@ -92,8 +101,11 @@ def _build_recording_timeline(t: list[float], start_hold_seconds: float) -> list
     return shifted
 
 
-def _enforce_joint_soft_limit(arm: XArmAPI, limit_rad: float, idx: int) -> None:
-    code, joints = arm.get_servo_angle(is_radian=True)
+def _enforce_joint_soft_limit(arm: XArmAPI, limit_rad: float, idx: int, joints=None) -> None:
+    # joints: latest state from the safety monitor (saves a network round trip per command)
+    code = 0
+    if joints is None:
+        code, joints = arm.get_servo_angle(is_radian=True)
     if code != 0 or joints is None or len(joints) < 7:
         raise RuntimeError(
             f"Failed to read joint angles for safety check at command {idx}, code={code}"
@@ -108,8 +120,11 @@ def _enforce_joint_soft_limit(arm: XArmAPI, limit_rad: float, idx: int) -> None:
         )
 
 
-def _enforce_joint_soft_limit_wrapped(arm: XArmAPI, limit_rad: float, idx: int) -> None:
-    code, joints = arm.get_servo_angle(is_radian=True)
+def _enforce_joint_soft_limit_wrapped(arm: XArmAPI, limit_rad: float, idx: int, joints=None) -> None:
+    # joints: latest state from the safety monitor (saves a network round trip per command)
+    code = 0
+    if joints is None:
+        code, joints = arm.get_servo_angle(is_radian=True)
     if code != 0 or joints is None or len(joints) < 7:
         raise RuntimeError(
             f"Failed to read joint angles for safety check at command {idx}, code={code}"
@@ -122,6 +137,12 @@ def _enforce_joint_soft_limit_wrapped(arm: XArmAPI, limit_rad: float, idx: int) 
         raise RuntimeError(
             f"Wrapped joint soft limit exceeded before command {idx}: {deg:.3f} deg > {limit_deg:.3f} deg"
         )
+
+
+def _monitor_q(safety):
+    if safety is not None and safety.monitor is not None and safety.monitor.latest_q is not None:
+        return list(safety.monitor.latest_q)
+    return None
 
 
 def connect_arm(ip: str) -> XArmAPI:
@@ -201,6 +222,7 @@ def playback_pose(
     joint_limit_rad: float,
     safety_every: int,
     joint_limit_mode: str,
+    safety: SafetySession | None = None,
 ) -> None:
     nonzero_codes = 0
     for idx, p_cmd in enumerate(pose):
@@ -209,9 +231,12 @@ def playback_pose(
             time.sleep(0.001)
         if idx % safety_every == 0:
             if joint_limit_mode == "wrapped":
-                _enforce_joint_soft_limit_wrapped(arm, joint_limit_rad, idx)
+                _enforce_joint_soft_limit_wrapped(arm, joint_limit_rad, idx, _monitor_q(safety))
             else:
-                _enforce_joint_soft_limit(arm, joint_limit_rad, idx)
+                _enforce_joint_soft_limit(arm, joint_limit_rad, idx, _monitor_q(safety))
+        if safety is not None:
+            safety.check_abort(idx)
+            safety.guard.check_cartesian_pose(p_cmd, idx)
         sent_t = time.perf_counter() - t0
         code = arm.set_position(
             x=p_cmd[0],
@@ -253,6 +278,7 @@ def playback_servo(
     joint_limit_rad: float,
     safety_every: int,
     joint_limit_mode: str,
+    safety: SafetySession | None = None,
 ) -> None:
     nonzero_codes = 0
     for idx, p_cmd in enumerate(pose):
@@ -261,9 +287,12 @@ def playback_servo(
             time.sleep(0.001)
         if idx % safety_every == 0:
             if joint_limit_mode == "wrapped":
-                _enforce_joint_soft_limit_wrapped(arm, joint_limit_rad, idx)
+                _enforce_joint_soft_limit_wrapped(arm, joint_limit_rad, idx, _monitor_q(safety))
             else:
-                _enforce_joint_soft_limit(arm, joint_limit_rad, idx)
+                _enforce_joint_soft_limit(arm, joint_limit_rad, idx, _monitor_q(safety))
+        if safety is not None:
+            safety.check_abort(idx)
+            safety.guard.check_cartesian_pose(p_cmd, idx)
         sent_t = time.perf_counter() - t0
         code = arm.set_servo_cartesian(p_cmd, is_radian=True)
         command_log.append(
@@ -296,6 +325,7 @@ def playback_velocity(
     joint_limit_rad: float,
     safety_every: int,
     joint_limit_mode: str,
+    safety: SafetySession | None = None,
 ) -> None:
     if twist is None:
         raise ValueError(
@@ -309,9 +339,17 @@ def playback_velocity(
             time.sleep(0.001)
         if idx % safety_every == 0:
             if joint_limit_mode == "wrapped":
-                _enforce_joint_soft_limit_wrapped(arm, joint_limit_rad, idx)
+                _enforce_joint_soft_limit_wrapped(arm, joint_limit_rad, idx, _monitor_q(safety))
             else:
-                _enforce_joint_soft_limit(arm, joint_limit_rad, idx)
+                _enforce_joint_soft_limit(arm, joint_limit_rad, idx, _monitor_q(safety))
+        if safety is not None:
+            safety.check_abort(idx)
+            dt_next = (t[idx + 1] - t[idx]) if idx + 1 < len(t) else 0.0
+            try:
+                safety.guard.check_cartesian_velocity(v_cmd, dt_next, idx)
+            except SafetyStop:
+                arm.vc_set_cartesian_velocity([0.0] * 6, is_radian=True, duration=-1)
+                raise
         sent_t = time.perf_counter() - t0
         code = arm.vc_set_cartesian_velocity(v_cmd, is_radian=True, duration=-1)
         command_log.append(
@@ -403,11 +441,40 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="Optional fallback roll,pitch,yaw in radians when trajectory omits orientation",
     )
+    p.add_argument(
+        "--no-fit",
+        action="store_true",
+        help="Execute the trajectory as given instead of its clean copy from data/preprocessed/ "
+        "(the copy fitted into the workcell of the current safety config; created on first use)",
+    )
+    p.add_argument("--refit", action="store_true", help="Refit the clean copy even if an up-to-date one exists")
+    add_safety_args(p)
     return p.parse_args()
 
 
-def main() -> None:
+def main() -> int:
     args = parse_args()
+    requested_trajectory = args.trajectory
+    if not args.no_fit and args.default_orientation_rpy.strip():
+        print("WARNING: --default-orientation-rpy only applies with --no-fit; fitted clean copies fill missing "
+              "orientation from fit.default_orientation_rpy_deg in the safety config")
+    if not args.no_fit:
+        from .safety.preprocessed import resolve
+
+        try:
+            refs = resolve(args.trajectory, args.safety_config, refit=args.refit)
+        except (ValueError, FileNotFoundError) as e:
+            print(f"cannot prepare trajectory: {e}")
+            return EXIT_REJECTED
+        if len(refs) > 1:
+            print(f"{args.trajectory} was split into {len(refs)} parts to fit the workcell; run them in order "
+                  "(scripts/control/play_cartesian_ik.sh does this, with an approach move before each):")
+            for r in refs:
+                print(f"  {r}")
+            return EXIT_REJECTED
+        args.trajectory = refs[0]
+        if args.trajectory != requested_trajectory:
+            print(f"executing clean copy {args.trajectory} (fitted from {requested_trajectory})")
     traj = load_cartesian_trajectory_csv(args.trajectory)
     joint_limit_rad = math.radians(max(args.joint_limit_deg, 1.0))
     safety_every = max(int(args.joint_safety_every), 1)
@@ -426,7 +493,11 @@ def main() -> None:
     end_code = -1
     start_pose: list[float] = []
     end_pose: list[float] = []
+    safety: SafetySession | None = None
+    exit_code = 0
+    orientation_fallback_source = "unknown"
     try:
+        safety = SafetySession(args, arm, args.ip, out_dir=report_dir)
         start_code, start_pose = arm.get_position(is_radian=True)
         print(f"start_pose_code={start_code} start_pose={start_pose}")
         if default_orientation_rpy is not None:
@@ -442,10 +513,12 @@ def main() -> None:
             start_pose,
             max_orientation_step_rad=max_orientation_step_rad,
         )
+        prepared_pose = safety.preprocess_cartesian(traj.t, prepared_pose, traj.twist, args.control)
         recording_t = _build_recording_timeline(traj.t, start_hold_seconds)
         set_mode_for_control(arm, args.control)
         sampler.start()
         t0 = sampler.t0
+        safety.start_runtime(t0)
         if args.control == "pose":
             playback_pose(
                 arm,
@@ -456,6 +529,7 @@ def main() -> None:
                 joint_limit_rad=joint_limit_rad,
                 safety_every=safety_every,
                 joint_limit_mode=joint_limit_mode,
+                safety=safety,
             )
         elif args.control == "servo":
             playback_servo(
@@ -467,6 +541,7 @@ def main() -> None:
                 joint_limit_rad=joint_limit_rad,
                 safety_every=safety_every,
                 joint_limit_mode=joint_limit_mode,
+                safety=safety,
             )
         else:
             playback_velocity(
@@ -478,14 +553,32 @@ def main() -> None:
                 joint_limit_rad=joint_limit_rad,
                 safety_every=safety_every,
                 joint_limit_mode=joint_limit_mode,
+                safety=safety,
             )
+        safety.wait_until_still()
+        if safety.monitor is not None and safety.monitor.tripped.is_set():
+            raise SafetyStop(f"runtime guard stopped the arm: {safety.monitor.trip_info.get('reason')}")
         sampler.stop()
         end_code, end_pose = arm.get_position(is_radian=True)
         print(f"end_pose_code={end_code} end_pose={end_pose}")
+    except SafetyRejected as e:
+        print(f"playback REJECTED by safety preprocessing, the robot was not moved: {e}", flush=True)
+        exit_code = EXIT_REJECTED
+    except SafetyStop as e:
+        print(f"playback ABORTED by safety: {e}", flush=True)
+        if safety is not None:
+            safety.abort_reason = str(e)
+        exit_code = EXIT_SAFETY_STOP
     finally:
         if sampler._thread is not None:
+            time.sleep(0.3)  # capture the stop in the measured feedback
             sampler.stop()
+        if safety is not None:
+            safety.close()
         arm.disconnect()
+
+    if exit_code == EXIT_REJECTED:
+        return exit_code
 
     if report_dir is not None:
         commanded_path = report_dir / "commanded_cartesian.csv"
@@ -497,6 +590,7 @@ def main() -> None:
 
         summary = {
             "trajectory": args.trajectory,
+            "requested_trajectory": requested_trajectory,
             "control": args.control,
             "ip": args.ip,
             "feedback_sample_period": args.feedback_sample_period,
@@ -511,6 +605,7 @@ def main() -> None:
             "orientation_source": traj.orientation_source,
             "orientation_fallback_source": orientation_fallback_source,
             "default_orientation_rpy": default_orientation_rpy,
+            "safety_exit_code": exit_code,
             "start_pose_code": start_code,
             "start_pose": start_pose,
             "end_pose_code": end_code,
@@ -531,7 +626,8 @@ def main() -> None:
             print(f"saved_error_figure: {analysis['figure_path']}")
             print(f"saved_error_csv: {analysis['error_csv_path']}")
             print(f"saved_error_metrics: {analysis['metrics_json_path']}")
+    return exit_code
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

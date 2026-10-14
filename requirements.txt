@@ -4,3 +4,6 @@ xarm-python-sdk>=1.14.8
 pyyaml>=6.0.0
 playwright>=1.46.0
 matplotlib>=3.9.0
+pytest>=8.0.0
+# optional: side-by-side demo videos (safety demo)
+imageio-ffmpeg>=0.5.0

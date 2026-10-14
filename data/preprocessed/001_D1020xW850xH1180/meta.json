@@ -1,0 +1,30 @@
+{
+  "index": 1,
+  "fingerprint": "00083afa9dd4",
+  "created": "2026-10-14T15:30:26",
+  "source_config": "/home/alon/Code/ACL/config/safety.yaml",
+  "box_D_W_H_mm": [
+    1020.0,
+    850.0,
+    1180.0
+  ],
+  "base_x_y_z_mm_yaw_deg": [
+    -20.0,
+    -35.0,
+    -20.0,
+    0.0
+  ],
+  "walls_in_base_mm": {
+    "x_min": -490,
+    "x_max": 530,
+    "y_min": -390,
+    "y_max": 460,
+    "z_min": 20,
+    "z_max": 1200
+  },
+  "tool_offset_mm": [
+    0.0,
+    0.0,
+    172.0
+  ]
+}

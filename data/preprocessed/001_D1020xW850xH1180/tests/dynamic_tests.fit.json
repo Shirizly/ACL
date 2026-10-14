@@ -1,0 +1,422 @@
+{
+  "generated_by": "safety.test_trajectories",
+  "fit_version": 3,
+  "grouped": true,
+  "trajectories": [
+    {
+      "name": "dyn_x_20pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_x_20pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dyn_x_50pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_x_50pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dyn_x_100pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_x_100pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dyn_y_20pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_y_20pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dyn_y_50pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_y_50pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dyn_y_100pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_y_100pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dyn_z_20pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_z_20pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dyn_z_50pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_z_50pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dyn_z_100pct",
+      "result": "generated",
+      "parts": [
+        {
+          "name": "dyn_z_100pct",
+          "start_joints_deg": [
+            2.6514,
+            -45.739,
+            3.6211,
+            37.7842,
+            2.6094,
+            83.4727,
+            4.8835
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    }
+  ],
+  "report": [
+    {
+      "name": "dyn_x_20pct",
+      "axis": "x",
+      "percent": 20,
+      "v_cruise_mm_s": 159.0,
+      "a_peak_mm_s2": 881.7,
+      "v100": 795.1,
+      "a100": 4408.6,
+      "min_singular_value": 74.5,
+      "binding": "joint speed",
+      "measured_tcp_speed_max": 159.0,
+      "measured_tcp_acc_max": 878.1,
+      "joint_speed_max_deg_s": 36.0,
+      "joint_acc_max_deg_s2": 198.6,
+      "duration_s": 9.19,
+      "safety_check": "SAFETY OK: min clearance 130.0 mm (required 22.5-32.5 mm), 812 configs checked"
+    },
+    {
+      "name": "dyn_x_50pct",
+      "axis": "x",
+      "percent": 50,
+      "v_cruise_mm_s": 397.5,
+      "a_peak_mm_s2": 2204.3,
+      "v100": 795.1,
+      "a100": 4408.6,
+      "min_singular_value": 74.5,
+      "binding": "joint speed",
+      "measured_tcp_speed_max": 397.5,
+      "measured_tcp_acc_max": 2194.9,
+      "joint_speed_max_deg_s": 89.3,
+      "joint_acc_max_deg_s2": 498.5,
+      "duration_s": 5.41,
+      "safety_check": "SAFETY OK: min clearance 130.0 mm (required 22.5-32.5 mm), 432 configs checked"
+    },
+    {
+      "name": "dyn_x_100pct",
+      "axis": "x",
+      "percent": 100,
+      "v_cruise_mm_s": 795.1,
+      "a_peak_mm_s2": 4408.6,
+      "v100": 795.1,
+      "a100": 4408.6,
+      "min_singular_value": 74.5,
+      "binding": "joint speed",
+      "measured_tcp_speed_max": 748.9,
+      "measured_tcp_acc_max": 4388.3,
+      "joint_speed_max_deg_s": 163.8,
+      "joint_acc_max_deg_s2": 996.6,
+      "duration_s": 4.09,
+      "safety_check": "SAFETY OK: min clearance 130.0 mm (required 22.5-32.5 mm), 405 configs checked"
+    },
+    {
+      "name": "dyn_y_20pct",
+      "axis": "y",
+      "percent": 20,
+      "v_cruise_mm_s": 200.0,
+      "a_peak_mm_s2": 1579.8,
+      "v100": 1000.0,
+      "a100": 7898.8,
+      "min_singular_value": 78.3,
+      "binding": "tcp speed",
+      "measured_tcp_speed_max": 200.0,
+      "measured_tcp_acc_max": 1566.6,
+      "joint_speed_max_deg_s": 25.0,
+      "joint_acc_max_deg_s2": 195.1,
+      "duration_s": 8.64,
+      "safety_check": "SAFETY OK: min clearance 182.0 mm (required 22.5-32.5 mm), 754 configs checked"
+    },
+    {
+      "name": "dyn_y_50pct",
+      "axis": "y",
+      "percent": 50,
+      "v_cruise_mm_s": 500.0,
+      "a_peak_mm_s2": 3949.4,
+      "v100": 1000.0,
+      "a100": 7898.8,
+      "min_singular_value": 78.3,
+      "binding": "tcp speed",
+      "measured_tcp_speed_max": 500.0,
+      "measured_tcp_acc_max": 3916.5,
+      "joint_speed_max_deg_s": 62.6,
+      "joint_acc_max_deg_s2": 487.0,
+      "duration_s": 4.89,
+      "safety_check": "SAFETY OK: min clearance 182.0 mm (required 22.5-32.5 mm), 448 configs checked"
+    },
+    {
+      "name": "dyn_y_100pct",
+      "axis": "y",
+      "percent": 100,
+      "v_cruise_mm_s": 1000.0,
+      "a_peak_mm_s2": 7898.8,
+      "v100": 1000.0,
+      "a100": 7898.8,
+      "min_singular_value": 78.3,
+      "binding": "tcp speed",
+      "measured_tcp_speed_max": 1000.0,
+      "measured_tcp_acc_max": 7833.0,
+      "joint_speed_max_deg_s": 125.0,
+      "joint_acc_max_deg_s2": 978.6,
+      "duration_s": 3.63,
+      "safety_check": "SAFETY OK: min clearance 182.0 mm (required 22.5-32.5 mm), 390 configs checked"
+    },
+    {
+      "name": "dyn_z_20pct",
+      "axis": "z",
+      "percent": 20,
+      "v_cruise_mm_s": 161.8,
+      "a_peak_mm_s2": 618.6,
+      "v100": 809.2,
+      "a100": 3092.9,
+      "min_singular_value": 78.0,
+      "binding": "joint speed",
+      "measured_tcp_speed_max": 161.8,
+      "measured_tcp_acc_max": 617.4,
+      "joint_speed_max_deg_s": 33.7,
+      "joint_acc_max_deg_s2": 133.1,
+      "duration_s": 11.39,
+      "safety_check": "SAFETY OK: min clearance 119.1 mm (required 22.5-32.5 mm), 1030 configs checked"
+    },
+    {
+      "name": "dyn_z_50pct",
+      "axis": "z",
+      "percent": 50,
+      "v_cruise_mm_s": 404.6,
+      "a_peak_mm_s2": 1546.5,
+      "v100": 809.2,
+      "a100": 3092.9,
+      "min_singular_value": 78.0,
+      "binding": "joint speed",
+      "measured_tcp_speed_max": 404.6,
+      "measured_tcp_acc_max": 1542.9,
+      "joint_speed_max_deg_s": 77.4,
+      "joint_acc_max_deg_s2": 323.6,
+      "duration_s": 6.74,
+      "safety_check": "SAFETY OK: min clearance 119.1 mm (required 22.5-32.5 mm), 564 configs checked"
+    },
+    {
+      "name": "dyn_z_100pct",
+      "axis": "z",
+      "percent": 100,
+      "v_cruise_mm_s": 809.2,
+      "a_peak_mm_s2": 3092.9,
+      "v100": 809.2,
+      "a100": 3092.9,
+      "min_singular_value": 78.0,
+      "binding": "joint speed",
+      "measured_tcp_speed_max": 701.5,
+      "measured_tcp_acc_max": 3084.5,
+      "joint_speed_max_deg_s": 125.9,
+      "joint_acc_max_deg_s2": 645.2,
+      "duration_s": 5.06,
+      "safety_check": "SAFETY OK: min clearance 119.1 mm (required 22.5-32.5 mm), 498 configs checked"
+    }
+  ],
+  "center_mm": [
+    250.0,
+    35.0,
+    450.0
+  ],
+  "stroke_mm": {
+    "x": 200.0,
+    "y": 250.0,
+    "z": 250.0
+  },
+  "config": "/home/alon/Code/ACL/config/safety.yaml",
+  "limits": {
+    "tcp_speed_mm_s": 1000.0,
+    "tcp_acc_mm_s2": 50000.0,
+    "joint_speed_deg_s": 180.0,
+    "joint_acc_deg_s2": 1145.9
+  }
+}
