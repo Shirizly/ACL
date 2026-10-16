@@ -8,6 +8,8 @@ description: Orientation for the ACL xArm 7 repo — UFACTORY simulator in Docke
 Python pipeline that replays CSV trajectories on a UFACTORY **xArm 7** — the
 official simulator now, the real arm later (same code, different IP).
 
+Operator command reference: `docs/USER_MANUAL.md` (keep it in sync when commands change). `scripts/control/go_ready.sh` moves to the ready pose (`--force` sim only). A clean grouped file passed without `#part` plays all its parts in order.
+
 ## Layout
 
 | Path | What |

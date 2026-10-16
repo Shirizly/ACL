@@ -1,5 +1,7 @@
 # xArm 7 Simulation + Control Pipeline
 
+**Operators: start with [docs/USER_MANUAL.md](docs/USER_MANUAL.md)**: commands to preprocess a trajectory and run it in the simulator or on the robot.
+
 This workspace sets up a development pipeline to run UFACTORY Studio simulation in Docker and execute joint and Cartesian trajectory playback from your host or dev container.
 
 ## Why this approach

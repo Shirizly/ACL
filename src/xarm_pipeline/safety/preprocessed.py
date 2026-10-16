@@ -234,6 +234,10 @@ def resolve(ref: str, cfg_path: str | Path | None = None, refit: bool = False) -
             raise ValueError(
                 f"{ref} was preprocessed for another safety setup ({in_set.name}); "
                 "run the original trajectory so it is fitted for the current config, or use that setup's config")
+        if selector is None:  # a clean file of several parts: play them all, in order
+            head = pd.read_csv(src, usecols=lambda c: c == TRAJ_COLUMN, dtype=str)
+            if TRAJ_COLUMN in head.columns:
+                return [f"{src}#{n}" for n in pd.unique(head[TRAJ_COLUMN])]
         return [ref]
 
     df = pd.read_csv(src, dtype={TRAJ_COLUMN: str})
