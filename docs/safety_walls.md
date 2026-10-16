@@ -655,3 +655,80 @@ the start pose.
 Suggested order on the real arm: `where` (no motion) → live overlay → `wall-test` with the default slow speed,
 `y+` and `y-` first (the attachment is the outermost part there), hand on the e-stop. Then measure the walls
 with `walls`.
+
+## Self-collision of the gripper with the robot's own body
+
+The wall checks only know the walls. Two sim runs were stopped by the firmware's own self-collision check
+(controller error **C22**, active because the sim's end-tool model was set to the xArm Gripper):
+* a straight path from the ready pose to a corner behind the robot swung the hanging gripper through the base column;
+* a fitted recorded trajectory started in a folded wrist pose (J4 119°, J6 180°) with the gripper against the
+  forearm.
+
+So every layer now also checks the end effector against the robot's body (`Workcell.body_slack`):
+* the wrist links, the tool capsule and the gripper box against the **base column** (floor → shoulder, `radii_mm.base`);
+* the tool capsule and the gripper box against the **upper arm, elbow, elbow offset and forearm**. The gripper's
+  mounting end (< 40 mm from the flange) is excluded, because it sits next to the wrist housing in every pose.
+
+Clearance must be at least `safety_margin_mm`. The pre-run check rejects violations (this can't be clipped), the
+runtime monitor stops on the clearance minus closing speed × lookahead, and the fit and the test generator avoid
+such poses. Self-collisions between other arm links are still not modelled. **Keep the firmware's self-collision
+detection on, with the right end-tool model, on the real robot**: it caught both cases above.
+
+Firmware stops are now reported by their real meaning (e.g. "C22 Self-Collision Error", "C35 Safety Boundary
+Limit"). Previously every stop was labelled C35.
+
+## Real-robot test trajectories (`safety.test_trajectories`)
+
+Generated for the current config, into its preprocessed set (`data/preprocessed/NNN_*/tests/`), run as-is:
+
+```bash
+python -m src.xarm_pipeline.safety.test_trajectories corners    # slow (50 mm/s) moves into each cell corner + corner_tour
+python -m src.xarm_pipeline.safety.test_trajectories dynamic    # strokes along x/y/z at 20/50/100 % of the limits
+scripts/control/play_cartesian_ik_record.sh "data/preprocessed/NNN_*/tests/workspace_corners.csv#corner_tour" servo 300
+```
+
+* **corners:** the gripper **tip**, the centre of the gripper box's far face, is brought as close to each corner
+  as every check allows: walls + margin + 5 mm, robot body, singularity margin (σ ≥ 25 mm/rad). The tool
+  orientation is free. Each corner tries tool axes from straight down to aimed at the corner, with two spins
+  about the tool axis, and keeps the best. The upper corners end up tilted about 75–147°, pointing up and out.
+  `corner_tour` then visits the corners **directly corner to corner**: around the bottom ring, then back around
+  the top ring, choosing the best of several visiting orders. Each leg is a straight tip line whose arm posture
+  morphs between the two corners' searched postures (IK biased in the null space,
+  `kinematics.ik_step_biased`). Where that fails, the leg retreats toward the middle of the cell, turns there, and
+  approaches the next corner. Only if both fail does it go back along the search path through the ready posture
+  (currently 2 of 9 legs; the first and last legs naturally start and end at the ready pose).
+  The tour is a **joint trajectory**, so the robot executes exactly the checked joints. A Cartesian leg would leave
+  the 7th degree of freedom to the firmware IK, which can end up in a different posture than the one checked.
+  Play it with `python -m src.xarm_pipeline.playback --trajectory "<set>/tests/workspace_corners.csv#corner_tour" --control servo`.
+  The new `servo` joint mode streams `set_servo_angle_j` at the CSV timestamps, after a joint move to the first
+  sample; `position` mode still queues stop-and-go moves at 20°/s.
+* **dynamic:** rest-to-rest strokes (x 200 mm, y/z 250 mm) with sine-shaped acceleration. "100 %" = the largest
+  (v, a) along that stroke within tool 1000 mm/s and 50 m/s², joints 180°/s and 1146°/s² (firmware limits), computed
+  through IK. In practice the joint acceleration limit keeps the tool to about 3–8 m/s². Each stroke's centre is
+  chosen so the runtime monitor's speed-dependent stop is not predicted to fire, with 25 mm spare for tracking lag.
+
+## Recorded trajectories (`safety.recorded`)
+
+```bash
+scripts/control/prepare_recorded.sh data/recorded_trajectories/5ec359d2 2.5 18 9 19   # time scale 2.5 = 2.5x slower
+```
+
+Positions only; the recorded orientation is dropped and the gripper points down. The steps:
+1. time-scale;
+2. cut spans over the tool speed/acceleration limits (90 % of the robot's);
+3. fit or split into the cell;
+4. check joint speed and acceleration through IK, then cut and refit once if needed.
+
+Every cut is reported as a NOTICE with its time spans, plus the time scale that would have needed no speed cuts.
+Parts cut out of a movement are **eased** in and out of rest along the same path, and the output is **densified to
+100 Hz** with a cubic curve through every recorded sample. In servo mode, setpoints 42 ms apart (60 Hz slowed
+2.5×) made the arm dash and wait at twice the planned speed, and the monitor stopped it.
+
+Sim results for the 5ec359d2 slate at 2.5×: 0018, 0009 and 0019 are kept 100 % (0018 in 3 parts, 0019 in 2). At
+1.5×, 0018 loses 8 % to speed cuts. The estimated slowdown needed for no speed cuts is about 1.9–2.4×. All parts of
+0018 at 2.5× ran in the sim without a stop: peak tracking error 7–12 mm, closest approach 52 mm.
+
+**Runtime throughput.** The per-command check reuses the joints the pre-run check validated for each sample,
+instead of solving IK again. The soft-limit check reads the monitor's joints instead of making a network round
+trip. At 100 Hz this took command lag from 77 ms to about 1 ms median, and peak tracking error at 1 m/s from
+102 mm to 12–17 mm.

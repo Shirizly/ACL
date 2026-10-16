@@ -1,0 +1,110 @@
+{
+  "generated_by": "safety.recorded",
+  "fit_version": 8,
+  "grouped": true,
+  "source": "data/recorded_trajectories/5ec359d2/0009.csv",
+  "trajectories": [
+    {
+      "name": "0009__p1",
+      "result": "fitted",
+      "parts": [
+        {
+          "name": "0009__p1",
+          "source_rows": [
+            0,
+            145
+          ],
+          "source_t_scaled": [
+            0.0,
+            6.042
+          ],
+          "source_t_original": [
+            0.0,
+            2.417
+          ],
+          "duration_s": 6.34,
+          "eased_extra_s": 0.3,
+          "params": {
+            "yaw": 84.375,
+            "spin": 0.0,
+            "tilt_x": 0.0,
+            "tilt_y": 0.0,
+            "cx": 278.475,
+            "cy": -5.33,
+            "cz": 325.875
+          },
+          "slack_mm": 19.5,
+          "start_joints_deg": [
+            1.2742,
+            -4.258,
+            -38.4715,
+            49.606,
+            -3.3184,
+            52.9861,
+            -119.4974
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "0009__p2",
+      "result": "fitted",
+      "parts": [
+        {
+          "name": "0009__p2",
+          "source_rows": [
+            145,
+            287
+          ],
+          "source_t_scaled": [
+            6.042,
+            11.958
+          ],
+          "source_t_original": [
+            2.417,
+            4.783
+          ],
+          "duration_s": 6.22,
+          "eased_extra_s": 0.3,
+          "params": {
+            "yaw": -0.404,
+            "spin": 0.0,
+            "tilt_x": 0.0,
+            "tilt_y": 0.0,
+            "cx": 280.0,
+            "cy": -35.0,
+            "cz": 269.585
+          },
+          "slack_mm": 29.9,
+          "start_joints_deg": [
+            5.4339,
+            -10.5193,
+            9.1002,
+            30.2587,
+            2.5391,
+            40.6763,
+            12.8614
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -127,6 +127,9 @@ def _check_time(t: np.ndarray, rep: Report) -> None:
         rep.warnings.append(f"dt min {dt.min():.4f}s < 4 ms; the host loop cannot reliably stream faster than ~250 Hz")
     if dt.max() > 0.1:
         rep.warnings.append(f"dt max {dt.max():.3f}s > 100 ms; servo-mode streaming expects small steps (10-30 ms)")
+    elif np.median(dt) > 0.025:
+        rep.warnings.append(f"median dt {np.median(dt) * 1000:.0f} ms: for fast motion in servo mode use <= 10-20 ms "
+                            "setpoints (sparse setpoints make the arm dash and wait); the fit/recorded pipelines densify to 100 Hz")
 
 
 def _validate_joint(df: pd.DataFrame, t: np.ndarray, rep: Report, robot_type: str, max_joint_speed: float) -> None:

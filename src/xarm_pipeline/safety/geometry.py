@@ -231,11 +231,15 @@ class Workcell:
             w[j] += f
             return w
 
-        for name, i, j in CAPSULES:
-            if name in ("wrist", "wrist_offset", "tool"):
+        for name, i, j in CAPSULES:     # wrist capsules first (checked against the base column only)
+            if name in ("wrist", "wrist_offset"):
                 for k in range(7):
                     rows.append(lerp(i, j, k / 6))
                     rad.append(self.cfg.radii_mm[name])
+        self._n_wrist_samples = len(rows)
+        for k in range(7):                # tool capsule (flange -> tool tip)
+            rows.append(lerp(7, 8, k / 6))
+            rad.append(self.cfg.radii_mm["tool"])
         corners = self.cfg.tool_box_corners_mm()
         r_box = self.cfg.radii_mm.get("tool_box", 0.0)
         for a in range(8):
@@ -256,19 +260,56 @@ class Workcell:
                 rows.append(w)
                 rad.append(r_box)
         self._bc_W, self._bc_r = np.asarray(rows), np.asarray(rad)
+        # Height of each sample along the flange z axis: the gripper's mounting end (< 40 mm from the flange)
+        # sits next to the wrist housing in every pose, so it is only checked against the base column; any
+        # real fold of the gripper onto the arm brings its lower part (checked) there first.
+        tool_len = float(np.linalg.norm(self.cfg.tool_offset_mm))
+        zf = np.zeros(len(rows))
+        n_w = self._n_wrist_samples
+        zf[n_w:n_w + 7] = np.arange(7) / 6 * tool_len
+        if corners is not None:
+            zf[n_w + 7:] = self._bc_W[n_w + 7:, 9:17] @ corners[:, 2]
+        self._link_check_mask = (np.arange(len(rows)) >= n_w) & (zf >= 40.0)
         return self._bc_W, self._bc_r
 
-    def base_column_slack(self, Pw: np.ndarray) -> np.ndarray:
-        """(N,17,3) world chain points -> (N,) clearance of the end effector (wrist capsules, tool capsule,
-        gripper box) from the robot's own base column, minus safety_margin_mm (< 0 = too close).
+    # Arm links the gripper must not touch (the wrist links are adjacent to it, so they are not checked).
+    BODY_LINKS = ("upper_arm", "elbow", "elbow_offset", "forearm")
 
-        The base column (floor -> shoulder, radii_mm.base) is a fixed obstacle like a wall: the gripper hanging
-        down can swing into it when the wrist passes near the base axis."""
+    def body_slack(self, Pw: np.ndarray, detail: bool = False):
+        """Self-collision check of the end effector against the robot's own body, minus safety_margin_mm
+        (< 0 = too close), for (N,17,3) world chain points -> (N,):
+          - wrist capsules, tool capsule and gripper box vs the base column (floor -> shoulder, radii_mm.base),
+            a fixed obstacle like a wall;
+          - tool capsule and gripper box vs the moving arm links upper_arm, elbow, elbow_offset, forearm
+            (a folded wrist can bring the gripper back against the forearm).
+        With detail=True also returns the name of the closest body part per configuration."""
+        Pw = np.asarray(Pw, dtype=float)
         W, r = self._base_column_sampling()
-        X = np.einsum("mk,nkd->nmd", W, np.asarray(Pw, dtype=float)) - self.t   # relative to the base origin
-        z = np.clip(X[..., 2], 0.0, XARM7_NOMINAL_DH[0][1])
-        d = np.sqrt(X[..., 0] ** 2 + X[..., 1] ** 2 + (X[..., 2] - z) ** 2)
-        return (d - r[None, :] - self.cfg.radii_mm["base"]).min(axis=1) - self.cfg.safety_margin_mm
+        X = np.einsum("mk,nkd->nmd", W, Pw)
+        rel = X - self.t
+        z = np.clip(rel[..., 2], 0.0, XARM7_NOMINAL_DH[0][1])
+        d_base = np.sqrt(rel[..., 0] ** 2 + rel[..., 1] ** 2 + (rel[..., 2] - z) ** 2) - r[None, :] - self.cfg.radii_mm["base"]
+        cols = [d_base.min(axis=1)]
+        g = self._link_check_mask                       # gripper samples away from the mount (tool capsule + box)
+        Xg, rg = X[:, g], r[g]
+        for name, i, j in CAPSULES:
+            if name not in self.BODY_LINKS:
+                continue
+            A, B = Pw[:, i], Pw[:, j]
+            AB = B - A
+            tt = np.clip(np.einsum("nmd,nd->nm", Xg - A[:, None], AB) / np.maximum((AB ** 2).sum(-1), 1e-9)[:, None], 0, 1)
+            d = np.linalg.norm(Xg - (A[:, None] + tt[..., None] * AB[:, None]), axis=-1) - rg[None, :] - self.cfg.radii_mm[name]
+            cols.append(d.min(axis=1))
+        D = np.stack(cols, axis=1) - self.cfg.safety_margin_mm
+        out = D.min(axis=1)
+        if detail:
+            labels = ("robot base column",) + tuple(f"robot {n}" for n in self.BODY_LINKS)
+            return out, [labels[k] for k in D.argmin(axis=1)]
+        return out
+
+    def base_column_slack(self, Pw: np.ndarray) -> np.ndarray:
+        """Backwards-compatible name for body_slack (base column + arm links)."""
+        return self.body_slack(Pw)
 
     def static_check(self) -> list[str]:
         """Config sanity: the fixed base column against the side walls and ceiling, and the shoulder

@@ -278,3 +278,53 @@ def ik_step_to(
         f"local IK did not converge to {list(np.round(pose_target, 3))}: "
         f"pos err {np.linalg.norm(e_p):.3f} mm, rot err {math.degrees(np.linalg.norm(e_r)):.3f} deg"
     )
+
+
+def ik_step_biased(
+    pose_target,
+    q_seed,
+    q_bias,
+    bias_gain: float = 0.2,
+    dh=XARM7_NOMINAL_DH,
+    tcp_offset=None,
+    tol_mm: float = 0.01,
+    tol_rad: float = 1e-4,
+    max_iter: int = 150,
+    damping: float = 1e-3,
+) -> np.ndarray:
+    """Like ik_step_to, plus a null-space pull of the 7th degree of freedom toward ``q_bias``.
+
+    The pose is reached exactly (same tolerances); among the joint solutions for it, the step prefers the
+    ones closer to q_bias. Used to keep a preferred arm posture along a Cartesian path, which plain
+    minimum-norm continuation does not control (it can drift into contorted but valid postures)."""
+    q = np.array(q_seed, dtype=float)
+    q_bias = np.asarray(q_bias, dtype=float)
+    R_t = rpy_to_matrix(*pose_target[3:6])
+    p_t = np.asarray(pose_target[:3], dtype=float)
+    off_p = (0.0, 0.0, 0.0)
+    R_off = np.eye(3)
+    if tcp_offset is not None:
+        off_p = tuple(tcp_offset[:3])
+        R_off = rpy_to_matrix(*tcp_offset[3:6])
+    lo = np.radians([l for l, _ in XARM7_JOINT_LIMITS_DEG])
+    hi = np.radians([h for _, h in XARM7_JOINT_LIMITS_DEG])
+    W = np.diag([1, 1, 1, 100, 100, 100.0])
+    for it in range(max_iter):
+        J, T = jacobian(q, dh, off_p)
+        e_p = p_t - T[:3, 3]
+        e_r = _rot_error(R_t, T[:3, :3] @ R_off)
+        converged = np.linalg.norm(e_p) < tol_mm and np.linalg.norm(e_r) < tol_rad
+        Jw = W @ J
+        Jpinv = Jw.T @ np.linalg.inv(Jw @ Jw.T + (damping ** 2) * np.eye(6))
+        null = (np.eye(7) - Jpinv @ Jw) @ (bias_gain * (q_bias - q))
+        if converged and (it > 0 or np.linalg.norm(null) < 1e-4):
+            return q
+        e = W @ np.concatenate([e_p, e_r])
+        n = np.linalg.norm(e)
+        if n > 20.0:
+            e = e * (20.0 / n)
+        q = np.clip(q + Jpinv @ e + null, lo, hi)
+    raise IKFailure(
+        f"biased IK did not converge to {list(np.round(pose_target, 3))}: "
+        f"pos err {np.linalg.norm(e_p):.3f} mm, rot err {math.degrees(np.linalg.norm(e_r)):.3f} deg"
+    )

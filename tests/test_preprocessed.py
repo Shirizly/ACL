@@ -81,7 +81,13 @@ def test_resolve_fits_once_then_reuses_and_refits_on_change(tmp_path, root, monk
     assert len(refs) == 1 and refs[0].startswith(str(root))
     clean = pd.read_csv(refs[0])
     assert clean["z"].min() > 60.0  # lifted
-    assert np.allclose(np.diff(clean["x"]), np.diff(pd.read_csv(src)["x"]), atol=1e-5)  # relative motion kept
+    # same path, only moved (the ends are re-timed to start/stop at rest, so compare geometry, not samples)
+    a = pd.read_csv(src)[["x", "y", "z"]].to_numpy()
+    b = clean[["x", "y", "z"]].to_numpy()
+    shift = b[0] - a[0]
+    assert np.allclose(b[-1] - b[0], a[-1] - a[0], atol=1e-3)
+    seg_len = np.linalg.norm(np.diff(a, axis=0), axis=1).max()
+    assert np.linalg.norm((b - shift)[:, None] - a[None], axis=2).min(axis=1).max() <= seg_len / 2 + 1e-3
 
     calls = []
     real_fit = fit.fit_file

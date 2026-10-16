@@ -1,0 +1,161 @@
+{
+  "generated_by": "safety.recorded",
+  "fit_version": 8,
+  "grouped": true,
+  "source": "data/recorded_trajectories/5ec359d2/0018.csv",
+  "trajectories": [
+    {
+      "name": "0018__p1",
+      "result": "fitted",
+      "parts": [
+        {
+          "name": "0018__p1",
+          "source_rows": [
+            0,
+            192
+          ],
+          "source_t_scaled": [
+            0.0,
+            4.8
+          ],
+          "source_t_original": [
+            0.0,
+            3.2
+          ],
+          "duration_s": 4.95,
+          "eased_extra_s": 0.15,
+          "params": {
+            "yaw": 5.49,
+            "spin": 0.0,
+            "tilt_x": 0.0,
+            "tilt_y": 0.0,
+            "cx": 280.967,
+            "cy": -18.828,
+            "cz": 264.907
+          },
+          "slack_mm": 30.0,
+          "start_joints_deg": [
+            -11.2621,
+            -0.9551,
+            -21.713,
+            50.1372,
+            -0.4545,
+            51.0254,
+            -38.1765
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "0018__p2",
+      "result": "fitted",
+      "parts": [
+        {
+          "name": "0018__p2",
+          "source_rows": [
+            192,
+            384
+          ],
+          "source_t_scaled": [
+            4.8,
+            9.6
+          ],
+          "source_t_original": [
+            3.2,
+            6.4
+          ],
+          "duration_s": 4.95,
+          "eased_extra_s": 0.15,
+          "params": {
+            "yaw": 66.562,
+            "spin": 0.0,
+            "tilt_x": 0.0,
+            "tilt_y": 0.0,
+            "cx": 280.0,
+            "cy": -35.0,
+            "cz": 314.277
+          },
+          "slack_mm": 29.9,
+          "start_joints_deg": [
+            -1.8718,
+            -31.7078,
+            -35.2026,
+            28.0295,
+            -21.2561,
+            56.6924,
+            -87.3481
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "0018__p3",
+      "result": "fitted",
+      "parts": [
+        {
+          "name": "0018__p3",
+          "source_rows": [
+            408,
+            746
+          ],
+          "source_t_scaled": [
+            10.2,
+            18.65
+          ],
+          "source_t_original": [
+            6.8,
+            12.433
+          ],
+          "duration_s": 8.75,
+          "eased_extra_s": 0.3,
+          "params": {
+            "yaw": -0.135,
+            "spin": 0.0,
+            "tilt_x": 0.0,
+            "tilt_y": 0.0,
+            "cx": 280.0,
+            "cy": -35.0,
+            "cz": 266.639
+          },
+          "slack_mm": 29.9,
+          "start_joints_deg": [
+            3.4199,
+            -15.8025,
+            5.3872,
+            28.5202,
+            2.0988,
+            44.2756,
+            7.2365
+          ],
+          "approach_via_joints_deg": [
+            0.0,
+            -28.17,
+            0.0,
+            23.24,
+            0.0,
+            51.41,
+            0.0
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -147,9 +147,9 @@ class SafetyMonitor:
         approach = max(0.0, (b0 - bc_raw) / (t - tb)) if t - tb > 1e-4 else 0.0
         ee_speed = approach
         if bc_raw - approach * self.lookahead_s < self.stop_margin and not self.tripped.is_set():
-            self.trip(f"monitor: end effector {bc_raw:.1f} mm from the robot's own base column "
+            self.trip(f"monitor: end effector {bc_raw:.1f} mm from the robot's own body (base column / arm links) "
                       f"(closing at {ee_speed:.0f} mm/s, stop margin {self.stop_margin:.1f} mm)",
-                      {"t": t, "source": "monitor", "link": "end effector", "wall": "robot base column",
+                      {"t": t, "source": "monitor", "link": "end effector", "wall": "robot body",
                        "clearance_mm": bc_raw, "max_point_speed_mm_s": ee_speed, "q_deg": np.degrees(q).round(3).tolist()})
         if float(Cp[k, w]) < self.stop_margin and not self.tripped.is_set():
             info = {
@@ -247,6 +247,31 @@ class SafetyMonitor:
         return summary
 
 
+def predict_monitor_margin(wc: Workcell, cfg, t, Q) -> tuple[float, int, str]:
+    """Simulate the runtime monitor along a planned path: joints Q (N,7) at times t (N,).
+
+    For every capsule/wall clearance and for the end effector's clearance to the robot's base column, the
+    monitor stops when  clearance - closing_speed * lookahead < stop_margin. Returns (worst value of
+    clearance - closing*lookahead - stop_margin, sample index, what): < 0 means the monitor will stop it."""
+    t = np.asarray(t, dtype=float)
+    Q = np.asarray(Q, dtype=float)
+    if len(t) < 2:
+        return float("inf"), 0, ""
+    look = cfg.runtime.latency_s + cfg.runtime.stopping_time_s
+    C, Pw = wc.clearance_for_q(Q, MOVING_CAPSULES)                     # (N, caps, 6)
+    B = wc.base_column_slack(Pw) + cfg.safety_margin_mm                 # (N,)
+    series = np.concatenate([C.reshape(len(t), -1), B[:, None]], axis=1)
+    rate = np.gradient(series, t, axis=0)
+    pred = series + np.minimum(rate, 0.0) * look - cfg.runtime.stop_margin_mm
+    n, k = np.unravel_index(int(np.argmin(pred)), pred.shape)
+    if k == series.shape[1] - 1:
+        what = "end effector vs robot body"
+    else:
+        cap, w = divmod(k, 6)
+        what = f"{MOVING_CAPSULES[cap][0]} vs {WALL_NAMES[w]}"
+    return float(pred[n, k]), int(n), what
+
+
 class CommandGuard:
     """Per-command check (before sending). Uses ``safety_margin_mm``."""
 
@@ -294,9 +319,9 @@ class CommandGuard:
         sl = self.chk.wc.base_column_slack(self.chk.wc.points_world(np.asarray(Q)))
         if sl.min() < 0:
             c = float(sl.min() + self.cfg.safety_margin_mm)
-            self._fail(idx, f"{label}: end effector {c:.1f} mm from the robot's own base column "
+            self._fail(idx, f"{label}: end effector {c:.1f} mm from the robot's own body (base column / arm links) "
                             f"(required >= {self.cfg.safety_margin_mm:.1f} mm)",
-                       {"link": "end effector", "wall": "robot base column", "clearance_mm": c})
+                       {"link": "end effector", "wall": "robot body", "clearance_mm": c})
 
     def _timed(fn):  # noqa: N805
         def wrapper(self, *a, **k):

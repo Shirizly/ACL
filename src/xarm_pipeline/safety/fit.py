@@ -49,7 +49,7 @@ from .kinematics import IKFailure, matrix_to_rpy, rpy_to_matrix
 from .preprocess import DEFAULT_CARTESIAN_SEED_DEG, SafetyChecker
 
 # Bump when the fitting algorithm changes in a way that should redo existing clean copies.
-FIT_VERSION = 3  # 3: gripper vs robot base column keep-out
+FIT_VERSION = 8  # 3: base column keep-out; 4: runtime-monitor prediction in the score; 5: gripper vs arm links; 6: eased part ends; 7: min_slack_mm; 8: 100 Hz output
 
 POS = ["x", "y", "z"]
 RPY = ["roll", "pitch", "yaw"]
@@ -64,6 +64,9 @@ class FitConfig:
     spin_range_deg: float = 0.0
     tilt_range_deg: float = 0.0
     good_enough_slack_mm: float = 30.0
+    # A placement is accepted only with at least this much slack: playback re-checks from the robot's actual
+    # joints, which land a little off the prediction, so a 0 mm fit can be refused there.
+    min_slack_mm: float = 5.0
     max_evals: int = 150
     split: bool = True
     min_part_s: float = 1.0
@@ -111,6 +114,53 @@ class Segment:
     @property
     def center(self) -> np.ndarray:
         return 0.5 * (self.p.min(axis=0) + self.p.max(axis=0))
+
+    def eased(self, max_acc_mm_s2: float = 2000.0, min_ramp_s: float = 0.3, still_mm_s: float = 20.0) -> "Segment":
+        """Same path, re-timed so the motion starts and ends at rest.
+
+        A part cut out of a longer recording starts (and ends) mid-motion; the robot, at rest, cannot jump to
+        that speed. The first/last stretch is slowed with a cosine speed ramp (peak acceleration about
+        max_acc_mm_s2) while every position stays on the recorded path (linear interpolation between the
+        recorded samples); the rest keeps the original timing. Samples keep the original period."""
+        t, p = self.t, self.p
+        if len(t) < 3:
+            return self
+        dt = float(np.median(np.diff(t)))
+        v0 = float(np.linalg.norm(p[1] - p[0]) / (t[1] - t[0]))
+        v1 = float(np.linalg.norm(p[-1] - p[-2]) / (t[-1] - t[-2]))
+        r_in = max(min_ramp_s, math.pi * v0 / (2 * max_acc_mm_s2)) if v0 > still_mm_s else 0.0
+        r_out = max(min_ramp_s, math.pi * v1 / (2 * max_acc_mm_s2)) if v1 > still_mm_s else 0.0
+        if r_in == 0.0 and r_out == 0.0:
+            return self
+        T = float(t[-1])
+        if r_in / 2 + r_out / 2 > T:  # very short part: scale the ramps down to fit
+            f = T / (r_in / 2 + r_out / 2)
+            r_in, r_out = r_in * f, r_out * f
+        Tn = T + r_in / 2 + r_out / 2   # each ramp covers half its length of original time
+
+        def tau(x):  # new time -> original time; d tau/dx ramps 0 -> 1 -> 0 with cosine shapes
+            if r_in > 0 and x < r_in:
+                return x / 2 - r_in / (2 * math.pi) * math.sin(math.pi * x / r_in)
+            if r_out > 0 and x > Tn - r_out:
+                y = Tn - x
+                return T - (y / 2 - r_out / (2 * math.pi) * math.sin(math.pi * y / r_out))
+            return x - r_in / 2
+
+        tn = np.arange(0.0, Tn + 1e-9, dt)
+        if tn[-1] < Tn - 1e-9:
+            tn = np.r_[tn, Tn]
+        ta = np.clip(np.array([tau(x) for x in tn]), 0.0, T)
+        pn = np.column_stack([np.interp(ta, t, p[:, k]) for k in range(3)])
+        Rn = np.empty((len(tn), 3, 3))
+        for k in range(3):
+            for m in range(3):
+                Rn[:, k, m] = np.interp(ta, t, self.R[:, k, m])
+        U, _, Vt = np.linalg.svd(Rn)
+        Rn = U @ Vt  # back onto rotations
+        tw = None
+        if self.twist is not None:
+            tw = np.column_stack([np.interp(ta, t, self.twist[:, k]) for k in range(6)])
+        return Segment(tn, pn, Rn, tw, self.name, self.src_rows)
 
     def part(self, a: int, b: int, name: str) -> "Segment":
         tw = None if self.twist is None else self.twist[a : b + 1]
@@ -208,13 +258,18 @@ class Fitter:
         poses = self.placed_poses(seg, th)
         try:
             _, _, _, q_at = self.chk.solve_cartesian_path([poses[0]], self.q_seed, self.tcp, None)
-            Qd, _, _, _ = self.chk.solve_cartesian_path(poses, q_at[-1], self.tcp, poses[0])
+            Qd, _, _, q_samples = self.chk.solve_cartesian_path(poses, q_at[-1], self.tcp, poses[0])
         except IKFailure as e:
             k = getattr(e, "sample_index", 0)
             return -500.0 - 500.0 * (1.0 - k / max(len(poses), 1))
         C, Pw = self.chk.wc.clearance_for_q(Qd, MOVING_CAPSULES)
         path_slack = min(float(np.min(C - self.required[None, :, None])),
                          float(self.chk.wc.base_column_slack(Pw).min()))  # gripper vs the robot's own base
+        if len(seg.t) == len(q_samples) and len(seg.t) > 1:
+            # fast motion must also stay clear of the runtime monitor's speed-dependent stop
+            from .runtime import predict_monitor_margin
+
+            path_slack = min(path_slack, predict_monitor_margin(self.chk.wc, self.cfg, seg.t, q_samples)[0])
         # The approach playback will use: a joint-space move from the seed (ready) configuration
         # to the start configuration. It must be safe too.
         Qa, _ = self.chk.densify_joint_path(np.asarray([q_at[-1]]), self.q_seed)
@@ -340,7 +395,7 @@ class Fitter:
         """Returns (fitted parts, dropped parts). Each fitted part: {segment, params, slack, evals}."""
         t0 = time.time()
         th, slack, evals = self.fit(seg)
-        if slack >= 0:
+        if slack >= self.fcfg.min_slack_mm:
             return [{"segment": seg, "params": th, "slack": slack, "evals": evals, "seconds": time.time() - t0}], []
         info = {"segment": seg, "best_slack": slack, "evals": evals}
         if not self.fcfg.split or depth >= self.fcfg.max_depth or seg.t[-1] < 2 * self.fcfg.min_part_s:
@@ -377,6 +432,36 @@ def _segment_from_frame(df: pd.DataFrame, name: str, fcfg: FitConfig) -> tuple[S
     tw = df[TWIST].to_numpy(float) if all(c in df.columns for c in TWIST) else None
     t = df["t"].to_numpy(float)
     return Segment(t - t[0], df[POS].to_numpy(float), R, tw, name, (0, len(df) - 1)), src
+
+
+def upsample_frame(df: pd.DataFrame, rate_hz: float = 100.0) -> pd.DataFrame:
+    """Densify a trajectory frame for servo streaming.
+
+    In servo mode the firmware heads for the latest setpoint, so setpoints far apart (e.g. 60 Hz recordings
+    slowed down 2.5x = 42 ms) make the arm dash and wait, with peak speeds far above the planned ones.
+    Positions use a cubic Hermite (Catmull-Rom) curve through every original sample at its original time, so the
+    recorded points and their timing are kept exactly; orientation and twist columns are interpolated linearly."""
+    t = df["t"].to_numpy(float)
+    if len(t) < 3 or float(np.median(np.diff(t))) <= 1.0 / rate_hz * 1.05:
+        return df
+    T = float(t[-1])
+    tn = np.arange(0.0, T, 1.0 / rate_hz)
+    tn = np.unique(np.r_[tn, t])  # keep every original sample time
+    i = np.clip(np.searchsorted(t, tn, side="right") - 1, 0, len(t) - 2)
+    h = t[i + 1] - t[i]
+    u = (tn - t[i]) / h
+    h00, h10, h01, h11 = 2 * u**3 - 3 * u**2 + 1, u**3 - 2 * u**2 + u, -2 * u**3 + 3 * u**2, u**3 - u**2
+    out = {"t": tn}
+    for c in df.columns:
+        if c in ("t", "traj"):
+            continue
+        y = df[c].to_numpy(float)
+        if c in ("x", "y", "z"):
+            m = np.gradient(y, t)  # central differences: Catmull-Rom tangents
+            out[c] = h00 * y[i] + h10 * h * m[i] + h01 * y[i + 1] + h11 * h * m[i + 1]
+        else:
+            out[c] = np.interp(tn, t, y)
+    return pd.DataFrame(out)[[c for c in df.columns if c != "traj"]]
 
 
 def _frame_from_part(fitter: Fitter, part: dict) -> pd.DataFrame:
@@ -479,7 +564,8 @@ def fit_file(ref: str, out_path: Path | None = None, cfg_path: str | None = None
         multi = len(fitted) + len(dropped) > 1
         for i, part in enumerate(fitted, 1):
             pname = f"{name}__p{i}" if multi else name
-            out_frames[pname] = _frame_from_part(fitter, part)
+            part = dict(part, segment=part["segment"].eased())   # start and end at rest (positions unchanged)
+            out_frames[pname] = upsample_frame(_frame_from_part(fitter, part))  # >= 100 Hz setpoints for servo
             s = part["segment"]
             th = {k: round(float(v), 3) for k, v in part["params"].items()}
             shift = (np.array([th["cx"], th["cy"], th["cz"]]) - (fitter.R_b @ s.center + fitter.b)).round(2).tolist()

@@ -1,0 +1,115 @@
+{
+  "source": "data/recorded_trajectories/5ec359d2/0009.csv",
+  "time_scale": 2.5,
+  "limit_fraction": 0.9,
+  "limits": {
+    "tcp_speed_mm_s": 900.0,
+    "tcp_acc_mm_s2": 45000.0,
+    "joint_speed_deg_s": 162.0,
+    "joint_acc_deg_s2": 1031.3100000000002
+  },
+  "orientation": "ignored (recorded roll/pitch/yaw dropped); fixed tool orientation [180.0, 0.0, 0.0] deg",
+  "duration_s": 11.9583325,
+  "cuts": [],
+  "parts": [
+    {
+      "name": "0009__p1",
+      "source_rows": [
+        0,
+        145
+      ],
+      "source_t_scaled": [
+        0.0,
+        6.042
+      ],
+      "source_t_original": [
+        0.0,
+        2.417
+      ],
+      "duration_s": 6.34,
+      "eased_extra_s": 0.3,
+      "params": {
+        "yaw": 84.375,
+        "spin": 0.0,
+        "tilt_x": 0.0,
+        "tilt_y": 0.0,
+        "cx": 278.475,
+        "cy": -5.33,
+        "cz": 325.875
+      },
+      "slack_mm": 19.5,
+      "start_joints_deg": [
+        1.2742,
+        -4.258,
+        -38.4715,
+        49.606,
+        -3.3184,
+        52.9861,
+        -119.4974
+      ],
+      "approach_via_joints_deg": [
+        0.0,
+        -28.17,
+        0.0,
+        23.24,
+        0.0,
+        51.41,
+        0.0
+      ]
+    },
+    {
+      "name": "0009__p2",
+      "source_rows": [
+        145,
+        287
+      ],
+      "source_t_scaled": [
+        6.042,
+        11.958
+      ],
+      "source_t_original": [
+        2.417,
+        4.783
+      ],
+      "duration_s": 6.22,
+      "eased_extra_s": 0.3,
+      "params": {
+        "yaw": -0.404,
+        "spin": 0.0,
+        "tilt_x": 0.0,
+        "tilt_y": 0.0,
+        "cx": 280.0,
+        "cy": -35.0,
+        "cz": 269.585
+      },
+      "slack_mm": 29.9,
+      "start_joints_deg": [
+        5.4339,
+        -10.5193,
+        9.1002,
+        30.2587,
+        2.5391,
+        40.6763,
+        12.8614
+      ],
+      "approach_via_joints_deg": [
+        0.0,
+        -28.17,
+        0.0,
+        23.24,
+        0.0,
+        51.41,
+        0.0
+      ]
+    }
+  ],
+  "dropped": [],
+  "tcp_peaks": {
+    "speed_mm_s": 870.3233884396059,
+    "acc_mm_s2": 3939.062908844919,
+    "acc_raw_mm_s2": 9027.540068848955
+  },
+  "suggested_min_time_scale": 2.42,
+  "kept_fraction": 1.0,
+  "seconds": 169.5
+}

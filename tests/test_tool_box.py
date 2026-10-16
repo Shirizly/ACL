@@ -80,7 +80,7 @@ def test_gripper_vs_robot_base_column(tmp_path):
     cfg = _cfg(tmp_path)
     wc = Workcell(cfg)
     near = ik_step_to([52.3, 119.1, 276.5, np.pi, 0, 0], READY, max_iter=400)  # pose the sim firmware flagged
-    assert wc.base_column_slack(wc.points_world(READY[None]))[0] > 50
+    assert wc.base_column_slack(wc.points_world(READY[None]))[0] > 20  # closest body part here: the forearm
     assert wc.base_column_slack(wc.points_world(near[None]))[0] < 0
     line = [[300 + (52.3 - 300) * s, 119.1 * s, 300 + (276.5 - 300) * s, np.pi, 0, 0] for s in np.linspace(0, 1, 30)]
     res = validate_cartesian_trajectory(cfg, list(np.linspace(0, 6, 30)), line, READY, None, include_approach=False)

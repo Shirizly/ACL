@@ -384,10 +384,10 @@ def _base_column_violation(chk, Qd, seg, t=None) -> dict | None:
         return None
     n = int(bad[0])
     k = int(seg[n])
-    d = {"sample_index": k, "link": "end effector", "wall": "robot base column",
+    d = {"sample_index": k, "link": "end effector", "wall": "robot body",
          "clearance_mm": float(sl[n] + chk.cfg.safety_margin_mm), "required_mm": chk.cfg.safety_margin_mm,
          "worst_clearance_mm": float(sl.min() + chk.cfg.safety_margin_mm),
-         "description": (f"gripper/wrist {sl[n] + chk.cfg.safety_margin_mm:.1f} mm from the robot's own base column "
+         "description": (f"gripper/wrist {sl[n] + chk.cfg.safety_margin_mm:.1f} mm from the robot's own body (base column / arm links) "
                          f"(required >= {chk.cfg.safety_margin_mm:.1f} mm; worst {sl.min() + chk.cfg.safety_margin_mm:.1f} mm)")}
     if t is not None and 0 <= k < len(t):
         d["t"] = float(t[k])
@@ -471,9 +471,18 @@ def validate_cartesian_trajectory(
     if v is None:
         report.update(result="ok", n_samples=len(poses), n_dense=len(Qd))
         mc = report["min_clearance"]["original"]["min_clearance_mm"]
-        return ValidationResult(True, "pass", "cartesian",
-                                f"SAFETY OK: min clearance {mc:.1f} mm (required {required.min():.1f}-{required.max():.1f} mm), "
-                                f"{len(Qd)} configs checked", None, poses, report, validated_q=list(q_at))
+        msg = (f"SAFETY OK: min clearance {mc:.1f} mm (required {required.min():.1f}-{required.max():.1f} mm), "
+               f"{len(Qd)} configs checked")
+        if t is not None and len(t) == len(q_at) and len(t) > 1:
+            from .runtime import predict_monitor_margin
+
+            pm, k, what = predict_monitor_margin(chk.wc, cfg, t, q_at)
+            report["predicted_monitor_margin_mm"] = {"value": pm, "sample_index": k, "what": what}
+            if pm < 0:
+                msg += (f"; WARNING: at this speed the runtime monitor will likely stop it near sample {k} "
+                        f"(t={float(t[k]):.2f}s, {what}): clearance minus closing speed x lookahead is {pm:.1f} mm "
+                        "short. Slow it down or move it away from that obstacle.")
+        return ValidationResult(True, "pass", "cartesian", msg, None, poses, report, validated_q=list(q_at))
 
     first = _violation_dict(v, int(seg[v.sample_index]), t)
     if policy != "clip" or first["sample_index"] < 0:

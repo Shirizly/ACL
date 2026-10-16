@@ -1,0 +1,205 @@
+{
+  "source": "data/recorded_trajectories/5ec359d2/0019.csv",
+  "time_scale": 2.5,
+  "limit_fraction": 0.9,
+  "limits": {
+    "tcp_speed_mm_s": 900.0,
+    "tcp_acc_mm_s2": 45000.0,
+    "joint_speed_deg_s": 162.0,
+    "joint_acc_deg_s2": 1031.3100000000002
+  },
+  "orientation": "ignored (recorded roll/pitch/yaw dropped); fixed tool orientation [180.0, 0.0, 0.0] deg",
+  "duration_s": 38.7083325,
+  "cuts": [],
+  "parts": [
+    {
+      "name": "0019__p1",
+      "source_rows": [
+        0,
+        108
+      ],
+      "source_t_scaled": [
+        0.0,
+        4.5
+      ],
+      "source_t_original": [
+        0.0,
+        1.8
+      ],
+      "duration_s": 4.8,
+      "eased_extra_s": 0.3,
+      "params": {
+        "yaw": 60.0,
+        "spin": 0.0,
+        "tilt_x": 0.0,
+        "tilt_y": 0.0,
+        "cx": -1.652,
+        "cy": 115.773,
+        "cz": 542.212
+      },
+      "slack_mm": 25.0,
+      "start_joints_deg": [
+        12.7481,
+        -16.5789,
+        -7.1283,
+        76.9072,
+        -2.0327,
+        93.3629,
+        -54.206
+      ],
+      "approach_via_joints_deg": [
+        0.0,
+        -28.17,
+        0.0,
+        23.24,
+        0.0,
+        51.41,
+        0.0
+      ]
+    },
+    {
+      "name": "0019__p2",
+      "source_rows": [
+        108,
+        215
+      ],
+      "source_t_scaled": [
+        4.5,
+        8.958
+      ],
+      "source_t_original": [
+        1.8,
+        3.583
+      ],
+      "duration_s": 4.76,
+      "eased_extra_s": 0.3,
+      "params": {
+        "yaw": -0.459,
+        "spin": 0.0,
+        "tilt_x": 0.0,
+        "tilt_y": 0.0,
+        "cx": 280.0,
+        "cy": -35.0,
+        "cz": 247.191
+      },
+      "slack_mm": 29.9,
+      "start_joints_deg": [
+        -3.2088,
+        -21.1909,
+        -4.2605,
+        22.0967,
+        -2.2459,
+        43.2562,
+        -5.0876
+      ],
+      "approach_via_joints_deg": [
+        0.0,
+        -28.17,
+        0.0,
+        23.24,
+        0.0,
+        51.41,
+        0.0
+      ]
+    },
+    {
+      "name": "0019__p3",
+      "source_rows": [
+        215,
+        421
+      ],
+      "source_t_scaled": [
+        8.958,
+        17.542
+      ],
+      "source_t_original": [
+        3.583,
+        7.017
+      ],
+      "duration_s": 8.73,
+      "eased_extra_s": 0.15,
+      "params": {
+        "yaw": -0.459,
+        "spin": 0.0,
+        "tilt_x": 0.0,
+        "tilt_y": 0.0,
+        "cx": 280.0,
+        "cy": -35.0,
+        "cz": 245.746
+      },
+      "slack_mm": 29.9,
+      "start_joints_deg": [
+        -1.7595,
+        -33.8028,
+        -1.7754,
+        14.6086,
+        -1.3206,
+        48.4063,
+        -1.8997
+      ],
+      "approach_via_joints_deg": [
+        0.0,
+        -28.17,
+        0.0,
+        23.24,
+        0.0,
+        51.41,
+        0.0
+      ]
+    },
+    {
+      "name": "0019__p4",
+      "source_rows": [
+        421,
+        929
+      ],
+      "source_t_scaled": [
+        17.542,
+        38.708
+      ],
+      "source_t_original": [
+        7.017,
+        15.483
+      ],
+      "duration_s": 21.47,
+      "eased_extra_s": 0.3,
+      "params": {
+        "yaw": -86.25,
+        "spin": 0.0,
+        "tilt_x": 0.0,
+        "tilt_y": 0.0,
+        "cx": 127.5,
+        "cy": -36.25,
+        "cz": 324.875
+      },
+      "slack_mm": 29.9,
+      "start_joints_deg": [
+        -4.6743,
+        -26.4118,
+        37.6205,
+        34.4766,
+        18.8054,
+        57.3937,
+        105.7918
+      ],
+      "approach_via_joints_deg": [
+        0.0,
+        -28.17,
+        0.0,
+        23.24,
+        0.0,
+        51.41,
+        0.0
+      ]
+    }
+  ],
+  "dropped": [],
+  "tcp_peaks": {
+    "speed_mm_s": 779.9128490149641,
+    "acc_mm_s2": 3038.1486310664077,
+    "acc_raw_mm_s2": 3740.3005868970854
+  },
+  "suggested_min_time_scale": 2.17,
+  "kept_fraction": 1.0,
+  "seconds": 202.7
+}
