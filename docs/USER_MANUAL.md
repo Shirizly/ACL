@@ -441,3 +441,14 @@ recording, and record a slower version for viewing.
 | Where is the gripper (no motion) | `scripts/control/measure.sh where` |
 | Stop the sim | `scripts/sim/down.sh` |
 | GUI (play, queue, video, telemetry) | `.venv/bin/python -m src.xarm_pipeline.gui.app` |
+
+## Who owns the TCP (sim vs real robot)
+
+The robot's firmware is in charge of the TCP and of turning Cartesian commands into joint commands (IK). The pipeline
+keeps its own model (nominal xArm 7 dimensions + `geometry.firmware_tcp_offset`) for the safety checks only.
+Real arms differ slightly from the nominal model (per-robot calibration, TCP definition), so after the joint move to a part's stored
+start joints, the robot's TCP may be a few mm from the trajectory start. Up to 15 mm (`XARM_PRESTART_MAX_CORRECTION_MM`),
+`prepare_cartesian_start.sh` prints a `PRESTART MISMATCH diagnosis` line (robot vs config TCP offset, firmware vs model
+position at those joints, DH difference) and closes the gap with a slow, wall-checked linear move. Above that it refuses.
+The runtime safety monitor uses the measured joints, so it checks where the arm really is. Keep the gap well under the
+22.5 mm safety margin, and keep `geometry.firmware_tcp_offset` close to the robot's TCP setting.
