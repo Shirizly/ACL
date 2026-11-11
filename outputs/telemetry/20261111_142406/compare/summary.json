@@ -1,0 +1,118 @@
+{
+  "run1": {
+    "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0019_t2.50.csv#0019__p1",
+    "kind": "cartesian",
+    "commands": 597,
+    "measured_samples": 1529,
+    "tcp_err_mm": {
+      "rms": 1.5525562229809653,
+      "max": 4.384933443198872
+    },
+    "joint_err_deg_max": [
+      1.349,
+      0.84,
+      1.564,
+      1.096,
+      1.92,
+      1.21,
+      2.52
+    ],
+    "fw_target_vs_model_deg_max": [
+      1.343,
+      0.84,
+      1.526,
+      1.063,
+      1.915,
+      1.212,
+      2.581
+    ],
+    "has_original": true
+  },
+  "run2": {
+    "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0019_t2.50.csv#0019__p2",
+    "kind": "cartesian",
+    "commands": 591,
+    "measured_samples": 1514,
+    "tcp_err_mm": {
+      "rms": 0.35529811007738993,
+      "max": 1.1450970281395692
+    },
+    "joint_err_deg_max": [
+      0.572,
+      0.446,
+      0.891,
+      0.597,
+      0.447,
+      0.401,
+      0.466
+    ],
+    "fw_target_vs_model_deg_max": [
+      0.572,
+      0.446,
+      0.895,
+      0.597,
+      0.447,
+      0.406,
+      0.466
+    ],
+    "has_original": true
+  },
+  "run3": {
+    "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0019_t2.50.csv#0019__p3",
+    "kind": "cartesian",
+    "commands": 1084,
+    "measured_samples": 2434,
+    "tcp_err_mm": {
+      "rms": 0.18272452797054295,
+      "max": 0.8261845592704922
+    },
+    "joint_err_deg_max": [
+      0.543,
+      0.283,
+      0.8,
+      0.511,
+      0.517,
+      0.394,
+      0.423
+    ],
+    "fw_target_vs_model_deg_max": [
+      0.542,
+      0.283,
+      0.8,
+      0.514,
+      0.517,
+      0.396,
+      0.431
+    ],
+    "has_original": true
+  },
+  "run4": {
+    "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0019_t2.50.csv#0019__p4",
+    "kind": "cartesian",
+    "commands": 2663,
+    "measured_samples": 5272,
+    "tcp_err_mm": {
+      "rms": 1.3279374288797896,
+      "max": 7.907535675887976
+    },
+    "joint_err_deg_max": [
+      6.156,
+      1.594,
+      6.794,
+      0.974,
+      2.349,
+      2.014,
+      2.301
+    ],
+    "fw_target_vs_model_deg_max": [
+      6.155,
+      1.657,
+      6.791,
+      0.999,
+      2.35,
+      2.014,
+      2.274
+    ],
+    "has_original": true
+  }
+}

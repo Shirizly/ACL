@@ -1,0 +1,13 @@
+{
+  "ip": "192.168.1.241",
+  "target": "Real robot",
+  "runs": [
+    {
+      "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0018_t1.50.csv",
+      "safety_config": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/safety.yaml",
+      "t_wall_start": 1794403209.9400566,
+      "t_wall_end": 1794403250.5733402,
+      "exit_code": 0
+    }
+  ]
+}

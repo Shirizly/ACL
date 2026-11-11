@@ -1,0 +1,6 @@
+{
+  "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0019_t2.50.csv#0019__p2",
+  "kind": "cartesian",
+  "control": "servo",
+  "t_wall_start": 1794403465.0501378
+}
