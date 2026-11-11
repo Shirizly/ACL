@@ -51,9 +51,9 @@ if os.environ.get('XARM_SAFETY_PREPROCESS', '1') != '0':
     _, q_now = arm.get_servo_angle(is_radian=True)
     tcp = robot_tcp_offset(arm, cfg)
     if q0_deg is not None:
-        from src.xarm_pipeline.safety.retreat import plan_safe_return
+        from src.xarm_pipeline.safety.retreat import is_simulator, plan_safe_return
         try:
-            via_path, how = plan_safe_return(cfg, q_now[:7], np.radians(via_deg))
+            via_path, how = plan_safe_return(cfg, q_now[:7], np.radians(via_deg), simulator=is_simulator(ip))
         except RuntimeError as e:
             print(f'PRESTART REFUSED by safety walls: return to the ready pose: {e}')
             arm.disconnect()

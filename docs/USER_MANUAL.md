@@ -217,6 +217,7 @@ The walls and safety checks use the frozen `safety.yaml` of the file's preproces
 * Stop stops the playback and the arm.
 * "Go to ready pose" returns to the ready pose, with the automatic wall-checked retreat when needed.
 * "Force ready pose" skips the wall check. It is for the simulator only and is disabled for the robot.
+* After a simulator restart the arm sits at the zero pose with the gripper below the floor. On the simulator (IP 127.0.0.1 or localhost, or `XARM_IS_SIM=1`) the first Play or "Go to ready pose" detects this and moves to ready without the wall check, printing `SIMULATOR RECOVERY`. On the real robot it still refuses.
 * Before each part the arm moves to ready and then to the part's start (the same as `play_cartesian_ik.sh`). The output of every run appears in the log at the bottom.
 
 **Queue.**

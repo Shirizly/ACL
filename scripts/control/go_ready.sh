@@ -27,7 +27,7 @@ import numpy as np
 from xarm.wrapper import XArmAPI
 from src.xarm_pipeline.safety.config import load_safety_config
 from src.xarm_pipeline.safety.fit import load_fit_config
-from src.xarm_pipeline.safety.retreat import plan_safe_return
+from src.xarm_pipeline.safety.retreat import is_simulator, plan_safe_return
 
 ip = os.environ.get("XARM_IP", "127.0.0.1")
 cfg_path = os.environ.get("XARM_SAFETY_CONFIG") or None
@@ -43,7 +43,8 @@ if os.environ["FORCE"] == "1":
     print("WARNING: safety check SKIPPED (--force). Use only on the simulator.")
 else:
     try:
-        path, how = plan_safe_return(load_safety_config(cfg_path), q_now[:7], np.radians(ready_deg))
+        path, how = plan_safe_return(load_safety_config(cfg_path), q_now[:7], np.radians(ready_deg),
+                                     simulator=is_simulator(ip))
     except RuntimeError as e:
         arm.disconnect()
         sys.exit(f"NOT MOVED: {e}. Jog the arm (Studio) to a clearer pose first.")

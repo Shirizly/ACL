@@ -7,6 +7,8 @@ firmware executes (``set_servo_angle`` in mode 0), so the whole returned path is
 """
 from __future__ import annotations
 
+import os
+
 import numpy as np
 
 from .config import SafetyConfig
@@ -43,10 +45,34 @@ def _check(cfg: SafetyConfig, q_from, path, name: str) -> ValidationResult:
                                      q_start=list(map(float, q_from)), trajectory_name=name)
 
 
-def plan_safe_return(cfg: SafetyConfig, q_now, q_target) -> tuple[list[np.ndarray], str]:
-    """Joint waypoints [rad] from q_now to q_target, all legs wall-checked. Raises RuntimeError if none found."""
+SIM_HOSTS = ("127.0.0.1", "localhost")
+
+
+def is_simulator(ip: str) -> bool:
+    """The local UFACTORY simulator (Docker). XARM_IS_SIM=1/0 overrides the guess."""
+    env = os.environ.get("XARM_IS_SIM")
+    if env is not None:
+        return env == "1"
+    return ip.strip() in SIM_HOSTS
+
+
+def plan_safe_return(cfg: SafetyConfig, q_now, q_target, simulator: bool = False) -> tuple[list[np.ndarray], str]:
+    """Joint waypoints [rad] from q_now to q_target, all legs wall-checked. Raises RuntimeError if none found.
+
+    simulator=True: if the CURRENT pose is already through a wall/the floor (the sim boots at the zero pose with
+    the gripper below the floor), return an unchecked direct move instead of refusing. Never on the real robot."""
     q_now = np.asarray(q_now, float)[:7]
     q_target = np.asarray(q_target, float)[:7]
+    here = _check(cfg, q_now, [q_now], "current pose")
+    if not here.ok and "THROUGH" in here.message:
+        if simulator:
+            return [q_target], ("SIMULATOR RECOVERY: current pose is through a wall/the floor (sim restart?), "
+                                "moving to the target WITHOUT the wall check. " + here.message)
+        raise RuntimeError(
+            "the arm's CURRENT pose is already through a wall/the floor in the safety model, so no checked move can "
+            "start from it (typical right after a simulator restart: zero pose, gripper below the floor). Simulator: "
+            "use 'Force ready pose' in the GUI or scripts/control/go_ready.sh --force --yes. Real robot: check "
+            "config/safety.yaml matches the cell, then jog the arm clear by hand. Details: " + here.message)
     res = _check(cfg, q_now, [q_target], "direct return")
     if res.ok:
         return [q_target], "direct joint move: " + res.message
