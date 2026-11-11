@@ -192,6 +192,63 @@ They are written to `data/preprocessed/<set>/tests/`.
 
 ---
 
+## GUI: play trajectories from a window (simulator or robot)
+
+The easiest way to run preprocessed trajectories. It uses the same safety-checked scripts as sections 3 and 4.
+Start the simulator first (3a), or connect the robot (0.6, 4b), then:
+
+```bash
+.venv/bin/python -m src.xarm_pipeline.gui.app
+# optional: preset the robot IP
+XARM_ROBOT_IP=192.168.1.123 .venv/bin/python -m src.xarm_pipeline.gui.app
+```
+
+**Window.** On the left is a 3D view of the arm (safety-model shapes) inside the safety box, following the robot's measured joints.
+Left-drag rotates, the scroll wheel zooms, middle-drag pans, and "Reset camera" restores the view. On the right are the controls; drag the divider to resize.
+
+**Target.** "Send to" chooses the Simulator (127.0.0.1) or the Real robot. Choosing the robot asks for confirmation and enables the
+Robot IP field. Every Play on the robot asks again. Status shows the connection, robot state and error code.
+
+**Trajectory.** "Load CSV…" opens `data/preprocessed/` by default. For a file with several parts, pick one part or "all parts in order".
+The walls and safety checks use the frozen `safety.yaml` of the file's preprocessed set (shown under the file name).
+
+**Run.**
+* Play plays the selection.
+* Stop stops the playback and the arm.
+* "Go to ready pose" returns to the ready pose, with the automatic wall-checked retreat when needed.
+* "Force ready pose" skips the wall check. It is for the simulator only and is disabled for the robot.
+* Before each part the arm moves to ready and then to the part's start (the same as `play_cartesian_ik.sh`). The output of every run appears in the log at the bottom.
+
+**Queue.**
+* "Add selected" adds the current file or part, and "Add files…" adds several files. You can drag to reorder and use Remove.
+* "Run queue" plays the items in order. Yellow means running, green done, red failed. The queue stops at the first failure.
+
+**Video.** "Start recording" saves the 3D view to `outputs/gui_videos/<timestamp>.mp4`. "Record video while playing" does this automatically
+for each Play or queue item. "Show safety walls" hides or shows the walls.
+
+**Telemetry.** Tick "Record telemetry" before Play or Run queue. The whole play or queue is logged to
+`outputs/telemetry/<timestamp>/`:
+* `measured.csv`: encoder joints and TCP pose.
+* `firmware_report.csv`: the controller's own joint and TCP targets from the port-30000 real-time stream. Its actual-state fields are zero in the sim.
+* `commands_<k>.csv/.json`: every command sent in run k.
+* `session.json`: runs, safety config and exit codes.
+
+When the play or queue ends, plots are generated automatically in `compare/`:
+* `run<k>_tcp.png`: gripper x, y, z, roll, pitch and yaw over time, showing original, preprocessed, commanded and measured, plus the tracking error.
+* `run<k>_joints.png`: firmware target, model-expected and encoder value for each joint.
+* `run<k>_aligned.csv` and `summary.json`.
+
+Rebuild the plots with:
+
+```bash
+.venv/bin/python -m src.xarm_pipeline.analysis.compare_run outputs/telemetry/<timestamp>
+```
+
+Without the GUI, set `XARM_TELEMETRY_DIR=<dir>` for the play scripts and run
+`python -m src.xarm_pipeline.telemetry record --out <dir>` alongside (stop it with Ctrl-C). Commands are logged in servo modes only.
+
+---
+
 ## 3. Run it in the simulator
 
 ### 3a. Start the simulator (once per session)
@@ -382,28 +439,4 @@ recording, and record a slower version for viewing.
 | Play + video + report | `XARM_RECORD_ARGS="--headless --arm-only --walls" scripts/control/play_cartesian_ik_record.sh "<file>" servo <max s>` |
 | Where is the gripper (no motion) | `scripts/control/measure.sh where` |
 | Stop the sim | `scripts/sim/down.sh` |
-
-## GUI
-
-```
-.venv/bin/python -m src.xarm_pipeline.gui.app
-```
-
-Load a CSV (preprocessed sets open by default), pick a part or all parts, and press Play. Playback uses the same
-safety-checked scripts as the command line, with the frozen `safety.yaml` of the trajectory's preprocessed set. The 3D view follows
-the robot's measured joints: drag to rotate, scroll to zoom, middle-drag to pan. "Show safety walls" toggles the walls.
-Recording saves the 3D view as `outputs/gui_videos/<timestamp>.mp4`, either by hand or automatically for each Play.
-The Queue runs several files or parts one after another and stops at the first failure. The target dropdown switches
-between the simulator and the real robot (IP from `XARM_ROBOT_IP` or typed in), and asks you to confirm before every run on the robot. "Force ready
-pose" only works on the simulator.
-
-### Telemetry and comparison plots
-
-Tick "Record telemetry" before Play or Run queue. The whole play or queue is logged to `outputs/telemetry/<timestamp>/`:
-`measured.csv` (encoder joints and TCP pose, wall-clock time), `firmware_report.csv` (the controller's own joint/TCP targets from the port-30000 real-time stream; actual fields are zero in the sim), `commands_<k>.csv` and `.json` (every command sent in run k, with the
-joints the safety model expects), and `session.json` (runs, safety config, exit codes). When it finishes,
-`compare/run<k>_tcp.png` (original / preprocessed / commanded / measured TCP + tracking error), `compare/run<k>_joints.png`
-(commanded vs encoder per joint), `compare/run<k>_aligned.csv` and `compare/summary.json` are generated automatically. Rebuild them by hand with
-`python -m src.xarm_pipeline.analysis.compare_run outputs/telemetry/<timestamp>`. From the command line, set
-`XARM_TELEMETRY_DIR=<dir>` for the play scripts and run `python -m src.xarm_pipeline.telemetry record --out <dir>` alongside
-(stop it with Ctrl-C). Commands are only logged in servo control modes.
+| GUI (play, queue, video, telemetry) | `.venv/bin/python -m src.xarm_pipeline.gui.app` |
