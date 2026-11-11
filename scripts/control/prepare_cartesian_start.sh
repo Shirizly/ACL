@@ -51,8 +51,16 @@ if os.environ.get('XARM_SAFETY_PREPROCESS', '1') != '0':
     _, q_now = arm.get_servo_angle(is_radian=True)
     tcp = robot_tcp_offset(arm, cfg)
     if q0_deg is not None:
-        res = validate_joint_trajectory(cfg, [0.0, 1.0], [np.radians(via_deg).tolist(), np.radians(q0_deg).tolist()],
-                                        q_start=q_now[:7], trajectory_name='joint-space approach via ready pose')
+        from src.xarm_pipeline.safety.retreat import plan_safe_return
+        try:
+            via_path, how = plan_safe_return(cfg, q_now[:7], np.radians(via_deg))
+        except RuntimeError as e:
+            print(f'PRESTART REFUSED by safety walls: return to the ready pose: {e}')
+            arm.disconnect()
+            raise SystemExit(2)
+        print('prestart return to ready pose: ' + how)
+        res = validate_joint_trajectory(cfg, [0.0], [np.radians(q0_deg).tolist()],
+                                        q_start=np.radians(via_deg).tolist(), trajectory_name='joint-space approach from ready pose')
     else:
         start = fk_pose(q_now[:7], tcp_offset=tcp)
         target = prepare_cartesian_poses([pose0], start)
@@ -66,7 +74,13 @@ else:
     print('WARNING: prestart safety check DISABLED (XARM_SAFETY_PREPROCESS=0)')
 
 if q0_deg is not None:
-    code = arm.set_servo_angle(angle=via_deg, is_radian=False, speed=30, wait=True)
+    import numpy as np
+    if os.environ.get('XARM_SAFETY_PREPROCESS', '1') == '0':
+        via_path = [np.radians(via_deg)]
+    for q_via in via_path:
+        code = arm.set_servo_angle(angle=np.degrees(q_via).tolist(), is_radian=False, speed=30, wait=True)
+        if code != 0:
+            break
     if code == 0:
         code = arm.set_servo_angle(angle=q0_deg, is_radian=False, speed=30, wait=True)
     _, reached = arm.get_position(is_radian=True)

@@ -7,6 +7,7 @@ import time
 
 from xarm.wrapper import XArmAPI
 
+from .telemetry import CommandLog
 from .safety.session import (
     EXIT_REJECTED,
     EXIT_SAFETY_STOP,
@@ -89,6 +90,7 @@ def playback_servo(
     t: list[float],
     q: list[list[float]],
     safety: SafetySession | None = None,
+    cmd_log: CommandLog | None = None,
 ) -> None:
     """Stream joint setpoints at their timestamps (servo mode 1, set_servo_angle_j): the timing is followed,
     unlike position mode, which queues stop-and-go moves at the SDK default joint speed."""
@@ -101,6 +103,8 @@ def playback_servo(
             safety.check_abort(idx)
             safety.guard.check_joint_target(q_cmd, idx)
         arm.set_servo_angle_j(angles=list(q_cmd), is_radian=True)
+        if cmd_log is not None:
+            cmd_log.log(idx, target, q=q_cmd)
 
 
 def playback_velocity(
@@ -163,7 +167,11 @@ def main() -> int:
         if args.control == "position":
             playback_position(arm, traj.t, traj.q, safety)
         elif args.control == "servo":
-            playback_servo(arm, traj.t, traj.q, safety)
+            cmd_log = CommandLog(args.trajectory, "joint", args.control)
+            try:
+                playback_servo(arm, traj.t, traj.q, safety, cmd_log)
+            finally:
+                cmd_log.close()
         else:
             playback_velocity(arm, traj.t, traj.q, traj.dq, safety)
         safety.wait_until_still()

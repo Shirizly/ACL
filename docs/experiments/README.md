@@ -1,0 +1,6 @@
+# Experiments index
+
+| date | experiment | answer | status |
+|---|---|---|---|
+| 2026-10-28 | [Recreating the recorded sensor trajectories: arm alone / +1 motor / stick](2026-10-28_recreate-trajectories-feasibility.md) | Arm alone works for most (29/39 whole in the walled cell, ~2.3× slowdown; walls, not orientation, are the limit). One motor gains little (~3%). Without walls the bare arm runs all 39 whole; a stick only helps for paths ≥1.5× larger. | complete |
+| 2026-10-28 | [How to slow the recorded trajectories for IMU accuracy tests, and what the robot cannot reproduce](2026-10-28_imu-test-trajectory-scaling.md) | Binding limit is the arm's ~0.4–0.6 g acceleration with orientation held, not speed. Galilean washout + local time warp beats uniform scaling modestly (keeps ~half the orientation-filter difficulty vs 27–44%, rates exact in ~77% of samples, duration ×1.1). Slowed replays overstate IMU accuracy ~2×, so report errors stratified by dynamic-acceleration and rate bins. Stick alone doesn't help; >1 g and >160 °/s need bench rigs or stick + gimbal. Addendum: separate tests work: rotation needs a fast 3-axis gimbal (bare arm ~2× too slow in angular acceleration); linear with a 600 mm stick reaches real time on 7/14 (≤1.56× all). | complete (proxy, no IK check) |

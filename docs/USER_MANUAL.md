@@ -321,7 +321,7 @@ export XARM_IP=192.168.1.XXX              # the robot's IP
 ```
 
 * Cell clear of people, emergency stop in reach, robot enabled in Studio with no errors.
-* `scripts/control/go_ready.sh` checks the move, asks, and moves to the ready pose. Never use `--force` on the
+* `scripts/control/go_ready.sh` checks the move, asks, and moves to the ready pose. Never use `--force` on the If the direct joint move would cross a wall, it first backs the arm off in a straight line towards the ready pose (each step wall-checked, `safety/retreat.py`). The same automatic retreat runs before every trajectory part (`prepare_cartesian_start.sh`), so parts that end near a wall no longer block the next run.
   real robot.
 
 ### 4c. Suggested order for the first real tests
@@ -382,3 +382,28 @@ recording, and record a slower version for viewing.
 | Play + video + report | `XARM_RECORD_ARGS="--headless --arm-only --walls" scripts/control/play_cartesian_ik_record.sh "<file>" servo <max s>` |
 | Where is the gripper (no motion) | `scripts/control/measure.sh where` |
 | Stop the sim | `scripts/sim/down.sh` |
+
+## GUI
+
+```
+.venv/bin/python -m src.xarm_pipeline.gui.app
+```
+
+Load a CSV (preprocessed sets open by default), pick a part or all parts, and press Play. Playback uses the same
+safety-checked scripts as the command line, with the frozen `safety.yaml` of the trajectory's preprocessed set. The 3D view follows
+the robot's measured joints: drag to rotate, scroll to zoom, middle-drag to pan. "Show safety walls" toggles the walls.
+Recording saves the 3D view as `outputs/gui_videos/<timestamp>.mp4`, either by hand or automatically for each Play.
+The Queue runs several files or parts one after another and stops at the first failure. The target dropdown switches
+between the simulator and the real robot (IP from `XARM_ROBOT_IP` or typed in), and asks you to confirm before every run on the robot. "Force ready
+pose" only works on the simulator.
+
+### Telemetry and comparison plots
+
+Tick "Record telemetry" before Play or Run queue. The whole play or queue is logged to `outputs/telemetry/<timestamp>/`:
+`measured.csv` (encoder joints and TCP pose, wall-clock time), `firmware_report.csv` (the controller's own joint/TCP targets from the port-30000 real-time stream; actual fields are zero in the sim), `commands_<k>.csv` and `.json` (every command sent in run k, with the
+joints the safety model expects), and `session.json` (runs, safety config, exit codes). When it finishes,
+`compare/run<k>_tcp.png` (original / preprocessed / commanded / measured TCP + tracking error), `compare/run<k>_joints.png`
+(commanded vs encoder per joint), `compare/run<k>_aligned.csv` and `compare/summary.json` are generated automatically. Rebuild them by hand with
+`python -m src.xarm_pipeline.analysis.compare_run outputs/telemetry/<timestamp>`. From the command line, set
+`XARM_TELEMETRY_DIR=<dir>` for the play scripts and run `python -m src.xarm_pipeline.telemetry record --out <dir>` alongside
+(stop it with Ctrl-C). Commands are only logged in servo control modes.

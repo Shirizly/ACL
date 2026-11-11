@@ -19,6 +19,10 @@ Operator command reference: `docs/USER_MANUAL.md` (keep it in sync when commands
 | `src/xarm_pipeline/cartesian_playback.py` | Cartesian playback, firmware IK: `servo` (mode 1, `set_servo_cartesian`, default), `pose` (mode 0, `set_position`), `velocity` (mode 5, `vc_set_cartesian_velocity`); feedback sampler thread, report dir, orientation unwrap/clamp, joint soft-limit check |
 | `src/xarm_pipeline/analyze_cartesian_error.py` | Commanded vs measured TCP error → CSV/PNG/JSON |
 | `src/xarm_pipeline/record_web_sim.py` | Playwright records the Studio web UI (`.webm`), optionally running a command meanwhile |
+| `src/xarm_pipeline/analysis/recreate_feasibility.py` | Offline study: can recorded trajectories be recreated (arm alone w/ orientation, +1 motor, stick w/o walls)? Results in `docs/experiments/` |
+| `src/xarm_pipeline/gui/` | Qt GUI (`app.py`) + PyVista render (`render.py`): load/queue/play, sim/robot switch, wall toggle, video |
+| `src/xarm_pipeline/telemetry.py`, `analysis/compare_run.py` | Telemetry session dir (measured.csv + commands_<k>.csv/json via `XARM_TELEMETRY_DIR`, servo modes only) and original/preprocessed/commanded/measured comparison plots |
+| `src/xarm_pipeline/safety/retreat.py` | `plan_safe_return`: direct joint move or wall-checked Cartesian retreat then joint move; used by go_ready.sh and prepare_cartesian_start.sh |
 | `src/xarm_pipeline/validate_trajectory.py` | Format pre-flight check for CSVs (no robot needed) |
 | `src/xarm_pipeline/generate_sample_*.py`, `scripts/control/gen_*.sh` | Sample trajectory generators |
 | `scripts/sim/` | `up.sh`, `down.sh`, `start_xarm7.sh`, `status.sh`, `shell.sh`, `record_web_video.sh` |

@@ -27,7 +27,7 @@ import numpy as np
 from xarm.wrapper import XArmAPI
 from src.xarm_pipeline.safety.config import load_safety_config
 from src.xarm_pipeline.safety.fit import load_fit_config
-from src.xarm_pipeline.safety.preprocess import validate_joint_trajectory
+from src.xarm_pipeline.safety.retreat import plan_safe_return
 
 ip = os.environ.get("XARM_IP", "127.0.0.1")
 cfg_path = os.environ.get("XARM_SAFETY_CONFIG") or None
@@ -38,19 +38,23 @@ if not arm.connected:
 arm.clean_error(); arm.clean_warn(); arm.motion_enable(True); arm.set_mode(0); arm.set_state(0)
 _, q_now = arm.get_servo_angle(is_radian=True)
 print(f"robot {ip}: joints now {np.degrees(q_now[:7]).round(1).tolist()} deg -> ready {ready_deg}")
+path = [np.radians(ready_deg)]
 if os.environ["FORCE"] == "1":
     print("WARNING: safety check SKIPPED (--force). Use only on the simulator.")
 else:
-    res = validate_joint_trajectory(load_safety_config(cfg_path), [0.0], [np.radians(ready_deg).tolist()],
-                                    q_start=q_now[:7], trajectory_name="move to ready")
-    print("safety check of the move: " + res.message)
-    if not res.ok:
+    try:
+        path, how = plan_safe_return(load_safety_config(cfg_path), q_now[:7], np.radians(ready_deg))
+    except RuntimeError as e:
         arm.disconnect()
-        sys.exit("NOT MOVED. Jog the arm (Studio) to a clearer pose first.")
+        sys.exit(f"NOT MOVED: {e}. Jog the arm (Studio) to a clearer pose first.")
+    print("safety check of the move: " + how)
 if os.environ["YES"] != "1" and input("Move to the ready pose now (20 deg/s)? Type 'yes': ").strip().lower() != "yes":
     arm.disconnect()
     sys.exit("not moved")
-rc = arm.set_servo_angle(angle=ready_deg, is_radian=False, speed=20, wait=True)
+for q in path:
+    rc = arm.set_servo_angle(angle=np.degrees(q).tolist(), is_radian=False, speed=20, wait=True)
+    if rc != 0:
+        break
 _, pos = arm.get_position()
 print(f"rc={rc}; flange at {[round(v) for v in pos[:3]]} mm; state {arm.state}, error {arm.error_code}")
 arm.disconnect()

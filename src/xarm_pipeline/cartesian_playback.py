@@ -13,6 +13,7 @@ import pandas as pd
 from xarm.wrapper import XArmAPI
 
 from .analyze_cartesian_error import analyze_cartesian_error
+from .telemetry import CommandLog
 from .safety.session import (
     EXIT_REJECTED,
     EXIT_SAFETY_STOP,
@@ -279,6 +280,7 @@ def playback_servo(
     safety_every: int,
     joint_limit_mode: str,
     safety: SafetySession | None = None,
+    cmd_log: CommandLog | None = None,
 ) -> None:
     nonzero_codes = 0
     for idx, p_cmd in enumerate(pose):
@@ -295,6 +297,8 @@ def playback_servo(
             safety.guard.check_cartesian_pose(p_cmd, idx)
         sent_t = time.perf_counter() - t0
         code = arm.set_servo_cartesian(p_cmd, is_radian=True)
+        if cmd_log is not None:
+            cmd_log.log(idx, target, pose=p_cmd, q=safety.guard.last_q if safety is not None else None)
         command_log.append(
             {
                 "t_target": target,
@@ -542,6 +546,7 @@ def main() -> int:
                 safety_every=safety_every,
                 joint_limit_mode=joint_limit_mode,
                 safety=safety,
+                cmd_log=CommandLog(args.trajectory, "cartesian", args.control),
             )
         else:
             playback_velocity(
