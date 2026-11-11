@@ -1,0 +1,89 @@
+{
+  "run1": {
+    "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0018_t1.50.csv#0018__p1",
+    "kind": "cartesian",
+    "commands": 694,
+    "measured_samples": 1575,
+    "tcp_err_mm": {
+      "rms": 1.372768184635353,
+      "max": 4.487982541715708
+    },
+    "joint_err_deg_max": [
+      4.026,
+      0.732,
+      4.625,
+      0.998,
+      1.3,
+      0.511,
+      1.029
+    ],
+    "fw_target_vs_model_deg_max": [
+      4.026,
+      0.682,
+      4.625,
+      0.968,
+      1.297,
+      0.484,
+      0.975
+    ],
+    "has_original": true
+  },
+  "run2": {
+    "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0018_t1.50.csv#0018__p2",
+    "kind": "cartesian",
+    "commands": 694,
+    "measured_samples": 1585,
+    "tcp_err_mm": {
+      "rms": 2.2295991278774197,
+      "max": 9.765281235165284
+    },
+    "joint_err_deg_max": [
+      3.652,
+      1.485,
+      2.863,
+      1.66,
+      2.55,
+      2.987,
+      2.747
+    ],
+    "fw_target_vs_model_deg_max": [
+      3.582,
+      1.451,
+      2.863,
+      1.536,
+      2.54,
+      2.934,
+      2.714
+    ],
+    "has_original": true
+  },
+  "run3": {
+    "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0018_t1.50.csv#0018__p3",
+    "kind": "cartesian",
+    "commands": 1225,
+    "measured_samples": 2391,
+    "tcp_err_mm": {
+      "rms": 0.49534737003573787,
+      "max": 3.1622431062802345
+    },
+    "joint_err_deg_max": [
+      1.374,
+      0.844,
+      0.841,
+      1.013,
+      1.106,
+      0.756,
+      0.772
+    ],
+    "fw_target_vs_model_deg_max": [
+      1.374,
+      0.844,
+      0.855,
+      0.962,
+      1.1,
+      0.689,
+      0.772
+    ],
+    "has_original": true
+  }
+}
