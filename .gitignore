@@ -6,7 +6,7 @@ __pycache__/
 
 # Logs and outputs
 logs/
-outputs/
+outputs/gui_videos
 *.log
 
 # Trajectories generated during experiments

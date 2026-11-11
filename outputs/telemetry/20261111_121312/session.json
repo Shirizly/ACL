@@ -1,0 +1,13 @@
+{
+  "ip": "127.0.0.1",
+  "target": "Simulator",
+  "runs": [
+    {
+      "trajectory": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/recorded/5ec359d2/0018_t2.50.csv",
+      "safety_config": "/home/kei/Desktop/xarm7_for_alon/ACL/data/preprocessed/001_D1020xW850xH1180/safety.yaml",
+      "t_wall_start": 1794395593.2570217,
+      "t_wall_end": 1794395598.769003,
+      "exit_code": 2
+    }
+  ]
+}
