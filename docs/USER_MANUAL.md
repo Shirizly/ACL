@@ -94,10 +94,10 @@ scripts/control/measure.sh where                       # must print joint angles
 ### 0.6 Real robot: network
 
 1. Connect the PC to the robot **controller box** by Ethernet. Give the PC a static IP in the robot's subnet,
-   e.g. robot `192.168.1.208` → PC `192.168.1.100`, netmask `255.255.255.0`, no gateway.
+   e.g. robot `192.168.1.241` → PC `192.168.1.100`, netmask `255.255.255.0`, no gateway.
 2. Check:
    ```bash
-   export XARM_IP=192.168.1.208           # the robot's IP (printed on the controller / shown in Studio)
+   export XARM_IP=192.168.1.241           # the robot's IP (printed on the controller / shown in Studio)
    ping -c 3 $XARM_IP
    scripts/control/measure.sh where       # prints the real arm's joints; does not move it
    ```
